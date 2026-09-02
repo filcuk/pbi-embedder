@@ -1,0 +1,105 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {
+  createSelection,
+  defaultOutputForInput,
+  formatConversionHeading,
+  formatConversionLead,
+  isFormat,
+} from "../app/tools/selection.js";
+
+test("isFormat accepts known formats only", () => {
+  assert.equal(isFormat("tabular"), true);
+  assert.equal(isFormat("json"), true);
+  assert.equal(isFormat("m-json"), true);
+  assert.equal(isFormat("dax"), false);
+  assert.equal(isFormat(""), false);
+});
+
+test("defaultOutputForInput maps m-json to tabular and others to m-json", () => {
+  assert.equal(defaultOutputForInput("m-json"), "tabular");
+  assert.equal(defaultOutputForInput("tabular"), "m-json");
+  assert.equal(defaultOutputForInput("json"), "m-json");
+});
+
+test("createSelection defaults", () => {
+  const selection = createSelection();
+  assert.deepEqual(selection.get(), {
+    family: "m",
+    input: "tabular",
+    output: "m-json",
+    quoteStyle: "escaped",
+    compact: false,
+    includeParsing: false,
+    convertQuotes: true,
+  });
+  assert.equal(selection.heading(), "M: Tabular → M-JSON");
+  assert.equal(
+    selection.lead(),
+    "Convert tabular data to M-encoded JSON for Power Query."
+  );
+  assert.equal(selection.showOptions(), true);
+  assert.equal(selection.showConvertQuotes(), false);
+});
+
+test("createSelection ignores initial family dax while DAX UI is stubbed", () => {
+  const selection = createSelection({ family: "dax", input: "json" });
+  assert.equal(selection.get().family, "m");
+  assert.equal(selection.get().input, "json");
+  assert.equal(selection.get().output, "m-json");
+});
+
+test("createSelection rewrites same input and output", () => {
+  const selection = createSelection({ input: "json", output: "json" });
+  assert.equal(selection.get().output, "m-json");
+});
+
+test("setInput resets output via defaultOutputForInput", () => {
+  const selection = createSelection();
+  selection.setInput("m-json");
+  assert.equal(selection.get().input, "m-json");
+  assert.equal(selection.get().output, "tabular");
+  assert.equal(selection.showOptions(), false);
+});
+
+test("setOutput ignores same-as-input and unknown formats", () => {
+  const selection = createSelection({ input: "tabular", output: "json" });
+  selection.setOutput("tabular");
+  assert.equal(selection.get().output, "json");
+  selection.setOutput(/** @type {any} */ ("nope"));
+  assert.equal(selection.get().output, "json");
+  selection.setOutput("m-json");
+  assert.equal(selection.get().output, "m-json");
+});
+
+test("showConvertQuotes requires single quotes and include parsing", () => {
+  const selection = createSelection();
+  selection.setQuoteStyle("single");
+  assert.equal(selection.showConvertQuotes(), false);
+  selection.setIncludeParsing(true);
+  assert.equal(selection.showConvertQuotes(), true);
+  selection.setQuoteStyle("escaped");
+  assert.equal(selection.showConvertQuotes(), false);
+});
+
+test("setFamily can still select dax after create (for when UI enables it)", () => {
+  const selection = createSelection({ family: "dax" });
+  assert.equal(selection.get().family, "m");
+  selection.setFamily("dax");
+  assert.equal(selection.get().family, "dax");
+  assert.equal(
+    formatConversionHeading(selection.get()),
+    "DAX: Tabular → M-JSON"
+  );
+});
+
+test("formatConversionLead covers each format pair wording", () => {
+  assert.equal(
+    formatConversionLead({ input: "json", output: "tabular" }),
+    "Convert JSON records to a table."
+  );
+  assert.equal(
+    formatConversionLead({ input: "m-json", output: "json" }),
+    "Convert M-encoded JSON to plain JSON."
+  );
+});

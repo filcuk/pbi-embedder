@@ -9,25 +9,6 @@ const stylesPath = path.join(root, "app", "styles.css");
 const frameworkPath = path.join(root, "app", "css", "framework.css");
 const appCssPath = path.join(root, "app", "css", "app.css");
 
-const EXPECTED_PARTIALS = [
-  "layout.css",
-  "code-block.css",
-  "controls-buttons.css",
-  "controls-badges.css",
-  "controls-chips.css",
-  "controls-fields.css",
-  "controls-widgets.css",
-  "controls-section-panel.css",
-  "controls-menus.css",
-  "controls-disclosure.css",
-  "controls-file.css",
-  "overlays.css",
-  "tutorial.css",
-  "rich-text-editor.css",
-  "table.css",
-  "controls-tabular-input.css",
-];
-
 test("styles.css is a fork entry importing tokens, framework, then app", () => {
   const css = fs.readFileSync(stylesPath, "utf8");
   assert.match(css, /@import url\("tokens\.css"\);/);
@@ -36,15 +17,24 @@ test("styles.css is a fork entry importing tokens, framework, then app", () => {
   assert.doesNotMatch(css, /@import url\("css\/layout\.css"\);/);
 });
 
-test("framework.css indexes every catalogue partial", () => {
+test("framework.css indexes selected partials that exist on disk", () => {
   const css = fs.readFileSync(frameworkPath, "utf8");
-  for (const partial of EXPECTED_PARTIALS) {
-    assert.match(css, new RegExp(`@import url\\("${partial}"\\);`));
-    assert.ok(fs.existsSync(path.join(root, "app", "css", partial)), partial);
+  const imports = [...css.matchAll(/@import url\("([^"]+\.css)"\);/g)].map(
+    (match) => match[1]
+  );
+  assert.ok(imports.length > 0, "framework.css should list CSS partials");
+  assert.ok(imports.includes("layout.css"));
+  assert.ok(imports.includes("overlays.css"));
+  assert.ok(imports.includes("controls-buttons.css"));
+  for (const partial of imports) {
+    assert.ok(
+      fs.existsSync(path.join(root, "app", "css", partial)),
+      partial
+    );
   }
 });
 
-test("app.css exists as a fork-owned stub", () => {
+test("app.css exists as a fork-owned sheet", () => {
   assert.ok(fs.existsSync(appCssPath));
   const css = fs.readFileSync(appCssPath, "utf8");
   assert.doesNotMatch(css, /@import/);

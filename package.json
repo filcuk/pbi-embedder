@@ -1,10 +1,10 @@
 {
-  "name": "sma1-framework",
+  "name": "pbi-embedder",
   "private": true,
   "type": "module",
   "scripts": {
     "lint": "eslint app tests",
-    "test": "node --test tests/**/*.test.js",
+    "test": "node scripts/test-app.mjs",
     "manifest:framework": "node scripts/generate-framework-manifest.mjs",
     "sync:framework": "node scripts/sync-framework.mjs",
     "verify:framework": "node scripts/verify-framework.mjs",

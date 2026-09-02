@@ -3,46 +3,582 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="A short description of what your app does." />
-    <title>My Microapp</title>
-    <link rel="icon" href="app/res/app-light.svg" type="image/svg+xml" data-brand-icon />
+    <meta
+      name="description"
+      content="Tools for embedding documents in M and DAX whilst bypassing data limits or file type constraints."
+    />
+    <title>Power BI Embedder</title>
+    <link rel="icon" href="app/res/app.svg" type="image/svg+xml" data-brand-icon />
     <script>
       window.__MICROAPP__ = {
-        themeStorageKey: "microapp-theme",
-        // App logo / favicon: pair (default) or single.
-        // Pair: appIconLight + appIconDark. Single: appIcon only, set light/dark to "".
-        // appIcon: "app/res/app.svg",
-        // appIconLight: "app/res/app-light.svg",
-        // appIconDark: "app/res/app-dark.svg",
+        themeStorageKey: "pbi-embedder-theme",
+        appIcon: "app/res/app.svg",
+        appIconLight: "",
+        appIconDark: "",
       };
     </script>
     <script src="app/theme-init.js"></script>
     <link rel="stylesheet" href="app/styles.css" />
+    <link rel="stylesheet" href="app/prism.css" />
   </head>
   <body>
     <header>
       <div class="site-brand">
-        <img class="site-logo brand-icon--light" src="app/res/app-light.svg" alt="My Microapp" width="40" height="40" />
-        <img class="site-logo brand-icon--dark" src="app/res/app-dark.svg" alt="" width="40" height="40" aria-hidden="true" />
-        <h1>My Microapp</h1>
+        <img
+          class="site-logo"
+          src="app/res/app.svg"
+          alt="Power BI Embedder"
+          width="40"
+          height="40"
+          data-brand-icon
+        />
+        <h1>Power BI Embedder</h1>
       </div>
-      <p class="tagline">A short description of what your app does.</p>
+      <p class="tagline">
+        When the data won’t fit — we’d better <em>embed</em> it.
+        <button
+          type="button"
+          id="about-open-btn"
+          class="btn btn-link tagline-link"
+        >
+          What?
+        </button>
+      </p>
     </header>
 
     <main id="main">
-      <section class="content-section">
-        <h2 id="getting-started" class="section-title">Getting started</h2>
-        <p>
-          Replace this page with your app content. Edit <code>index.html</code> and
-          add your logic in <code>app/main.js</code>.
-        </p>
-        <p>
-          <a href="demo.html">View the component demo</a> to see buttons, dialogs,
-          tooltips, banners, and the theme toggle.
-        </p>
+      <section class="content-section" aria-labelledby="tooling">
+        <h2 id="tooling" class="section-title">Tooling</h2>
+        <div class="panel-row tooling-bar">
+          <div
+            class="segmented-control"
+            id="family-control"
+            data-segmented-control-default="m"
+          >
+            <div
+              class="segmented-control-list"
+              role="radiogroup"
+              aria-label="Language"
+            >
+              <button
+                type="button"
+                class="segmented-control-item"
+                role="radio"
+                aria-checked="true"
+                data-segmented-control-value="m"
+              >
+                M
+              </button>
+              <button
+                type="button"
+                class="segmented-control-item"
+                role="radio"
+                aria-checked="false"
+                data-segmented-control-value="dax"
+                disabled
+              >
+                DAX
+              </button>
+            </div>
+            <input
+              type="hidden"
+              class="segmented-control-value"
+              name="family"
+              value="m"
+            />
+          </div>
+
+          <div
+            class="segmented-control"
+            id="input-format-control"
+            data-segmented-control-default="tabular"
+          >
+            <div
+              class="segmented-control-list"
+              role="radiogroup"
+              aria-label="Input"
+            >
+              <button
+                type="button"
+                class="segmented-control-item"
+                role="radio"
+                aria-checked="true"
+                data-segmented-control-value="tabular"
+              >
+                Tabular
+              </button>
+              <button
+                type="button"
+                class="segmented-control-item"
+                role="radio"
+                aria-checked="false"
+                data-segmented-control-value="json"
+              >
+                JSON
+              </button>
+              <button
+                type="button"
+                class="segmented-control-item"
+                role="radio"
+                aria-checked="false"
+                data-segmented-control-value="m-json"
+              >
+                M-JSON
+              </button>
+            </div>
+            <input
+              type="hidden"
+              class="segmented-control-value"
+              name="input-format"
+              value="tabular"
+            />
+          </div>
+
+          <div
+            class="segmented-control"
+            id="output-format-control"
+            data-segmented-control-default="m-json"
+          >
+            <div
+              class="segmented-control-list"
+              role="radiogroup"
+              aria-label="Output"
+            >
+              <button
+                type="button"
+                class="segmented-control-item"
+                role="radio"
+                aria-checked="false"
+                data-segmented-control-value="tabular"
+                disabled
+              >
+                Tabular
+              </button>
+              <button
+                type="button"
+                class="segmented-control-item"
+                role="radio"
+                aria-checked="false"
+                data-segmented-control-value="json"
+              >
+                JSON
+              </button>
+              <button
+                type="button"
+                class="segmented-control-item"
+                role="radio"
+                aria-checked="true"
+                data-segmented-control-value="m-json"
+              >
+                M-JSON
+              </button>
+            </div>
+            <input
+              type="hidden"
+              class="segmented-control-value"
+              name="output-format"
+              value="m-json"
+            />
+          </div>
+
+          <button type="button" class="btn" id="load-sample-btn">
+            Load sample
+          </button>
+        </div>
+      </section>
+
+      <section class="content-tier" aria-labelledby="conversion-heading">
+        <header class="content-tier-header">
+          <h2 id="conversion-heading" class="segment-title">
+            M: Tabular → M-JSON
+          </h2>
+          <p class="content-tier-lead" id="conversion-lead">
+            Convert tabular data to M-encoded JSON for Power Query.
+          </p>
+        </header>
+        <div class="content-tier-body">
+          <section class="content-section" aria-labelledby="input-heading">
+            <h3 id="input-heading" class="section-title">Input</h3>
+
+            <div
+              class="banner banner-error hidden"
+              data-convert-error
+              role="status"
+              hidden
+            >
+              <span
+                class="banner-icon"
+                data-icon="error"
+                data-icon-class="banner-icon-svg"
+                aria-hidden="true"
+              ></span>
+              <span class="banner-body" id="convert-error-message">
+                Could not convert the current input.
+              </span>
+            </div>
+
+            <div
+              class="tabular-input"
+              id="input-tabular"
+              aria-label="Tabular input"
+            ></div>
+
+            <div
+              class="code-block code-block--full hidden"
+              id="input-json"
+              data-code-mode="edit"
+              data-code-toolbar="top"
+              data-code-toolbar-actions="clear,copy,paste,maximize,line-numbers"
+              data-code-surface-actions="none"
+              data-expandable-surface
+              data-expandable-surface-label="JSON input"
+              hidden
+            >
+              <div class="code-block-body" data-expandable-surface-trigger>
+                <pre class="line-numbers language-json"><code class="language-json"></code></pre>
+              </div>
+            </div>
+
+            <div
+              class="code-block code-block--full hidden"
+              id="input-m-json"
+              data-code-mode="edit"
+              data-code-toolbar="top"
+              data-code-toolbar-actions="clear,copy,paste,maximize,line-numbers"
+              data-code-surface-actions="none"
+              data-expandable-surface
+              data-expandable-surface-label="M-JSON input"
+              hidden
+            >
+              <div class="code-block-body" data-expandable-surface-trigger>
+                <pre class="line-numbers language-powerquery"><code class="language-powerquery"></code></pre>
+              </div>
+            </div>
+          </section>
+
+          <section
+            class="content-section"
+            id="options-section"
+            aria-labelledby="options-heading"
+          >
+            <h3 id="options-heading" class="section-title">Options</h3>
+            <div
+              class="banner banner-info hidden"
+              data-single-quote-warning
+              role="status"
+              hidden
+            >
+              <span
+                class="banner-icon"
+                data-icon="info"
+                data-icon-class="banner-icon-svg"
+                aria-hidden="true"
+              ></span>
+              <span class="banner-body">
+                Single quotes may not be supported in the Mashup Engine. Convert to double quotes before parsing the JSON.
+              </span>
+            </div>
+            <div class="section-panel" id="options-panel">
+              <div class="panel-stack">
+                <div class="panel-row" id="quote-style-row">
+                  <span class="field-label" id="quote-style-label">Quotes</span>
+                  <div
+                    class="segmented-control segmented-control--slim"
+                    id="quote-style-control"
+                    data-segmented-control-default="escaped"
+                  >
+                    <div
+                      class="segmented-control-list"
+                      role="radiogroup"
+                      aria-labelledby="quote-style-label"
+                    >
+                      <button
+                        type="button"
+                        class="segmented-control-item"
+                        role="radio"
+                        aria-checked="true"
+                        data-segmented-control-value="escaped"
+                      >
+                        Escaped quotes
+                      </button>
+                      <button
+                        type="button"
+                        class="segmented-control-item"
+                        role="radio"
+                        aria-checked="false"
+                        data-segmented-control-value="single"
+                      >
+                        Single quotes
+                      </button>
+                    </div>
+                    <input
+                      type="hidden"
+                      class="segmented-control-value"
+                      name="quote-style"
+                      value="escaped"
+                    />
+                  </div>
+                </div>
+                <div
+                  class="toggle"
+                  id="compact-output-toggle"
+                  data-toggle-default="false"
+                >
+                  <button
+                    type="button"
+                    class="toggle-btn"
+                    role="switch"
+                    aria-checked="false"
+                    data-tooltip="Minimise the output"
+                  >
+                    <span class="toggle-track" aria-hidden="true">
+                      <span class="toggle-thumb">
+                        <span
+                          data-icon="check"
+                          data-icon-class="toggle-thumb-icon toggle-thumb-icon--on"
+                          aria-hidden="true"
+                        ></span>
+                      </span>
+                    </span>
+                    <span class="toggle-label">Compact output</span>
+                  </button>
+                  <input
+                    type="hidden"
+                    class="toggle-value"
+                    name="compact-output"
+                    value="false"
+                  />
+                </div>
+                <div
+                  class="toggle"
+                  id="include-parsing-toggle"
+                  data-toggle-default="false"
+                >
+                  <button
+                    type="button"
+                    class="toggle-btn"
+                    role="switch"
+                    aria-checked="false"
+                    data-tooltip="Add let…in block with table parser"
+                  >
+                    <span class="toggle-track" aria-hidden="true">
+                      <span class="toggle-thumb">
+                        <span
+                          data-icon="check"
+                          data-icon-class="toggle-thumb-icon toggle-thumb-icon--on"
+                          aria-hidden="true"
+                        ></span>
+                      </span>
+                    </span>
+                    <span class="toggle-label">Include parsing</span>
+                  </button>
+                  <input
+                    type="hidden"
+                    class="toggle-value"
+                    name="include-parsing"
+                    value="false"
+                  />
+                </div>
+                <div
+                  class="toggle hidden"
+                  id="convert-quotes-toggle"
+                  data-toggle-default="true"
+                  hidden
+                >
+                  <button
+                    type="button"
+                    class="toggle-btn"
+                    role="switch"
+                    aria-checked="true"
+                    data-tooltip="Automatically replace single with double quotes"
+                  >
+                    <span class="toggle-track" aria-hidden="true">
+                      <span class="toggle-thumb">
+                        <span
+                          data-icon="check"
+                          data-icon-class="toggle-thumb-icon toggle-thumb-icon--on"
+                          aria-hidden="true"
+                        ></span>
+                      </span>
+                    </span>
+                    <span class="toggle-label">Convert quotes</span>
+                  </button>
+                  <input
+                    type="hidden"
+                    class="toggle-value"
+                    name="convert-quotes"
+                    value="true"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="content-section" aria-labelledby="output-heading">
+            <h3 id="output-heading" class="section-title">Output</h3>
+
+            <div
+              class="table-block table-block--wide hidden"
+              id="output-tabular"
+              data-table-sortable
+              hidden
+            >
+              <div class="panel-row" id="output-tabular-toolbar">
+                <button
+                  type="button"
+                  class="btn btn-label-flash"
+                  id="output-tabular-copy"
+                  aria-label="Copy table"
+                  data-tooltip="Copy for Excel"
+                  disabled
+                >
+                  <span class="btn-label-flash__label">Copy</span>
+                </button>
+              </div>
+              <div class="table-wrap">
+                <table class="table table--compact table--striped" aria-label="Tabular output">
+                  <thead>
+                    <tr></tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div
+              class="code-block code-block--full hidden"
+              id="output-json"
+              data-code-mode="select"
+              data-code-toolbar="top"
+              data-code-toolbar-actions="copy,maximize,line-numbers"
+              data-code-surface-actions="none"
+              data-expandable-surface
+              data-expandable-surface-label="JSON output"
+              hidden
+            >
+              <div class="code-block-body" data-expandable-surface-trigger>
+                <pre class="line-numbers language-json"><code class="language-json"></code></pre>
+              </div>
+            </div>
+
+            <div
+              class="code-block code-block--full"
+              id="output-m-json"
+              data-code-mode="select"
+              data-code-toolbar="top"
+              data-code-toolbar-actions="copy,maximize,line-numbers"
+              data-code-surface-actions="none"
+              data-expandable-surface
+              data-expandable-surface-label="M-JSON output"
+            >
+              <div class="code-block-body" data-expandable-surface-trigger>
+                <pre class="line-numbers language-powerquery"><code class="language-powerquery"></code></pre>
+              </div>
+            </div>
+          </section>
+        </div>
       </section>
     </main>
 
+    <div
+      id="about-dialog"
+      class="modal hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="about-dialog-title"
+      hidden
+    >
+      <div class="modal-backdrop" data-dialog-close></div>
+      <div class="modal-panel">
+        <div class="modal-header">
+          <h2 id="about-dialog-title">What does this do?</h2>
+          <button
+            type="button"
+            class="modal-close"
+            aria-label="Close"
+            data-dialog-close
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>
+            <strong>Power BI Embedder</strong> allows embedding documents in Power Query M or DAX, bypassing
+            size and file type limits.
+          </p>
+          <p>
+            You can use it to <em>embed huge static mapping tables, or SVG images</em>. 
+            The tool ensures the input is valid, escaped, and will be parsed correctly. 
+            It also provides various options to customise the generated code. 
+            <br />
+            You can bring previously converted code to <em>parse back into standard formats</em>.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <div class="modal-footer-actions">
+            <button
+              type="button"
+              class="btn btn-primary"
+              data-dialog-close
+              data-dialog-default
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="load-sample-dialog"
+      class="modal hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="load-sample-dialog-title"
+      hidden
+    >
+      <div class="modal-backdrop" data-dialog-close></div>
+      <div class="modal-panel">
+        <div class="modal-header">
+          <h2 id="load-sample-dialog-title">Replace current input?</h2>
+          <button
+            type="button"
+            class="modal-close"
+            aria-label="Close"
+            data-dialog-close
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>Loading the sample will overwrite your current input.</p>
+        </div>
+        <div class="modal-footer">
+          <div class="modal-footer-actions">
+            <button
+              type="button"
+              class="btn"
+              data-dialog-close
+              data-dialog-default
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              id="load-sample-confirm"
+            >
+              Load sample
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script defer src="app/vendor/prism/prism.min.js"></script>
+    <script defer src="app/vendor/prism/prism-json.min.js"></script>
+    <script defer src="app/vendor/prism/prism-powerquery.min.js"></script>
+    <script defer src="app/vendor/prism/prism-line-numbers.min.js"></script>
     <script type="module" src="app/main.js"></script>
   </body>
 </html>

@@ -1,7 +1,23 @@
 {
   "schemaVersion": 2,
-  "frameworkVersion": "0.13.0",
+  "frameworkVersion": "0.13.6",
   "source": "filcuk/sma1-framework",
-  "components": ["*"],
-  "skills": ["*"]
+  "components": [
+    "about-dialog",
+    "banner",
+    "code-block",
+    "dialog",
+    "dropdown",
+    "expandable-surface",
+    "fields",
+    "section-panel",
+    "segmented-control",
+    "table",
+    "tabular-input",
+    "toggle",
+    "tooltip"
+  ],
+  "skills": [
+    "*"
+  ]
 }
