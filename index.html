@@ -3,12 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="A short description of what your app does." />
-    <title>My Microapp</title>
+    <meta
+      name="description"
+      content="Convert tabular data, JSON, and M-encoded JSON for Power Query."
+    />
+    <title>Power BI Embedder</title>
     <link rel="icon" href="app/res/app-light.svg" type="image/svg+xml" data-brand-icon />
     <script>
       window.__MICROAPP__ = {
-        themeStorageKey: "microapp-theme",
+        themeStorageKey: "pbi-embedder-theme",
         // App logo / favicon: pair (default) or single.
         // Pair: appIconLight + appIconDark. Single: appIcon only, set light/dark to "".
         // appIcon: "app/res/app.svg",
@@ -22,23 +25,34 @@
   <body>
     <header>
       <div class="site-brand">
-        <img class="site-logo brand-icon--light" src="app/res/app-light.svg" alt="My Microapp" width="40" height="40" />
-        <img class="site-logo brand-icon--dark" src="app/res/app-dark.svg" alt="" width="40" height="40" aria-hidden="true" />
-        <h1>My Microapp</h1>
+        <img
+          class="site-logo brand-icon--light"
+          src="app/res/app-light.svg"
+          alt="Power BI Embedder"
+          width="40"
+          height="40"
+        />
+        <img
+          class="site-logo brand-icon--dark"
+          src="app/res/app-dark.svg"
+          alt=""
+          width="40"
+          height="40"
+          aria-hidden="true"
+        />
+        <h1>Power BI Embedder</h1>
       </div>
-      <p class="tagline">A short description of what your app does.</p>
+      <p class="tagline">
+        Convert tabular data, JSON, and M-encoded JSON for Power Query.
+      </p>
     </header>
 
     <main id="main">
       <section class="content-section">
         <h2 id="getting-started" class="section-title">Getting started</h2>
         <p>
-          Replace this page with your app content. Edit <code>index.html</code> and
-          add your logic in <code>app/main.js</code>.
-        </p>
-        <p>
-          <a href="demo.html">View the component demo</a> to see buttons, dialogs,
-          tooltips, banners, and the theme toggle.
+          Tooling UI lands in the next step. Edit <code>index.html</code> and
+          <code>app/main.js</code> to build the converter.
         </p>
       </section>
     </main>

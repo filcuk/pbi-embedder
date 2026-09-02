@@ -27,7 +27,7 @@ jobs:
       - name: Prepare site
         run: |
           mkdir -p _site/app
-          cp index.html demo.html _site/
+          cp index.html _site/
           cp .nojekyll _site/
           cp -r app/* _site/app/
 

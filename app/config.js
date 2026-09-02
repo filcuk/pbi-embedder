@@ -1,10 +1,10 @@
 /** Fork-sensitive defaults — edit when creating your app from this framework. */
 export const APP_CONFIG = {
   /** Public site URL (GitHub Pages / custom domain). Used to hide this app in “also see”. */
-  appUrl: "https://filcuk.github.io/sma1-framework/",
-  repoUrl: "https://github.com/filcuk/sma1-framework",
-  themeStorageKey: "microapp-theme",
-  themeChangeEvent: "microapp-theme-change",
+  appUrl: "https://fifak.github.io/pbi-embedder/",
+  repoUrl: "https://github.com/fifak/pbi-embedder",
+  themeStorageKey: "pbi-embedder-theme",
+  themeChangeEvent: "pbi-embedder-theme-change",
   /**
    * Remote JSON for the footer “also see” menu.
    * Top-level array of `{ topic, items, order? }` sections and/or flat link objects.
@@ -33,43 +33,6 @@ export const APP_CONFIG = {
    * merged with the filtered remote — same topic names share one section; items
    * de-duplicated by URL). When false, local is never shown.
    */
-  alsoSeeIncludeLocal: true,
-  alsoSee: [
-    {
-      topic: "Examples",
-      order: 10,
-      items: [
-        {
-          label: "Example App A",
-          subtitle: "Sample related microapp",
-          url: "https://example.com/app-a",
-          iconLight: "app/res/app-light.svg",
-          iconDark: "app/res/app-dark.svg",
-          accent: "#8250df",
-          accentHover: "#6639ba",
-          order: 10,
-        },
-        {
-          label: "Example App B",
-          subtitle: "Another demo destination",
-          url: "https://example.com/app-b",
-          iconLight: "app/res/app-light.svg",
-          iconDark: "app/res/app-dark.svg",
-          accentLight: "#1a7f37",
-          accentDark: "#3fb950",
-          accentHoverLight: "#116329",
-          accentHoverDark: "#56d364",
-          order: 20,
-        },
-      ],
-    },
-    {
-      label: "Example App C",
-      subtitle: "Ungrouped related project",
-      url: "https://example.com/app-c",
-      iconLight: "app/res/app-light.svg",
-      iconDark: "app/res/app-dark.svg",
-      order: 10,
-    },
-  ],
+  alsoSeeIncludeLocal: false,
+  alsoSee: [],
 };

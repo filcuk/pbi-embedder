@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "frameworkVersion": "0.13.0",
+  "frameworkVersion": "0.13.6",
   "source": "filcuk/sma1-framework",
   "components": ["*"],
   "skills": ["*"]
