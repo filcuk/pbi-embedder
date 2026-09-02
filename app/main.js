@@ -2,11 +2,17 @@ import { initShell } from "./shell/shell.js";
 import { setHidden } from "./utils/dom.js";
 import { initSegmentedControl } from "./components/segmented-control.js";
 import { initToggle } from "./components/toggle.js";
-import { initTabularInput } from "./components/tabular-input.js";
+import { initTabularInput, formatClipboardTable } from "./components/tabular-input.js";
 import { initCodeBlock } from "./components/code-block.js";
 import { initExpandableSurfaces } from "./components/expandable-surface.js";
 import { initDialog } from "./components/dialog.js";
-import { initIcons } from "./utils/icons.js";
+import { initIcons, createIcon } from "./utils/icons.js";
+import { copyText } from "./utils/clipboard.js";
+import {
+  prepareButtonLabelFlash,
+  setButtonLabelFlash,
+  flashButtonLabel,
+} from "./utils/button-label.js";
 import { showBanner, hideBanner } from "./components/banner.js";
 import { createSelection } from "./tools/selection.js";
 import {
@@ -30,10 +36,12 @@ const selection = createSelection({
   quoteStyle: "escaped",
   compact: false,
   includeParsing: false,
+  convertQuotes: true,
 });
 
 const headingEl = document.getElementById("conversion-heading");
 const optionsSection = document.getElementById("options-section");
+const convertQuotesToggle = document.getElementById("convert-quotes-toggle");
 const outputFormatControl = document.getElementById("output-format-control");
 const errorBanner = document.querySelector("[data-convert-error]");
 const errorMessageEl = document.getElementById("convert-error-message");
@@ -69,6 +77,8 @@ const SAMPLE_RECORDS = tableToRecords(SAMPLE_TABLE);
 let inputTabularApi = null;
 /** @type {{ destroy: () => void } | null} */
 let outputTabularApi = null;
+/** @type {import("./tools/convert.js").TableData | null} */
+let lastOutputTable = null;
 /** @type {ReturnType<typeof initCodeBlock> | null} */
 let inputJsonApi = null;
 /** @type {ReturnType<typeof initCodeBlock> | null} */
@@ -121,6 +131,7 @@ function syncChrome() {
 
   const showOptions = selection.showOptions();
   setHidden(optionsSection, !showOptions);
+  setHidden(convertQuotesToggle, !(showOptions && selection.showConvertQuotes()));
   if (singleQuoteWarning) {
     if (showOptions && state.quoteStyle === "single") {
       showBanner(singleQuoteWarning);
@@ -236,6 +247,7 @@ function loadSampleIntoInput() {
         quoteStyle: state.quoteStyle,
         compact: state.compact,
         includeParsing: state.includeParsing,
+        convertQuotes: state.convertQuotes,
       })
     );
   }
@@ -281,11 +293,13 @@ function writeOutput(outputFormat, result) {
   suppressConvert = true;
   try {
     if (outputFormat === "tabular") {
+      lastOutputTable = result.table ?? { columns: [], rows: [] };
       outputTabularApi = renderOutputTable(
         outputSurfaces.tabular,
-        result.table,
+        lastOutputTable,
         outputTabularApi
       );
+      syncOutputTabularCopy();
       return;
     }
     const text = result.text ?? "";
@@ -297,6 +311,39 @@ function writeOutput(outputFormat, result) {
   } finally {
     suppressConvert = false;
   }
+}
+
+/**
+ * Clear the active output surface (e.g. after a failed convert).
+ * @param {import("./tools/selection.js").Format} outputFormat
+ */
+function clearOutput(outputFormat) {
+  suppressConvert = true;
+  try {
+    if (outputFormat === "tabular") {
+      lastOutputTable = { columns: [], rows: [] };
+      outputTabularApi = renderOutputTable(
+        outputSurfaces.tabular,
+        lastOutputTable,
+        outputTabularApi
+      );
+      syncOutputTabularCopy();
+      return;
+    }
+    if (outputFormat === "json") {
+      outputJsonApi?.setSource("");
+    } else {
+      outputMJsonApi?.setSource("");
+    }
+  } finally {
+    suppressConvert = false;
+  }
+}
+
+function syncOutputTabularCopy() {
+  const copyBtn = document.getElementById("output-tabular-copy");
+  if (!(copyBtn instanceof HTMLButtonElement)) return;
+  copyBtn.disabled = !(lastOutputTable?.columns?.length);
 }
 
 function runConvert() {
@@ -311,10 +358,12 @@ function runConvert() {
     quoteStyle: state.quoteStyle,
     compact: state.compact,
     includeParsing: state.includeParsing,
+    convertQuotes: state.convertQuotes,
   });
 
   if (!result.ok) {
     setConvertError(result.error);
+    clearOutput(state.output);
     return;
   }
 
@@ -411,6 +460,15 @@ initToggle(document.getElementById("include-parsing-toggle"), {
   onChange: ({ checked, source }) => {
     if (source === "init") return;
     selection.setIncludeParsing(checked);
+    syncChrome();
+    scheduleConvert();
+  },
+});
+
+initToggle(document.getElementById("convert-quotes-toggle"), {
+  onChange: ({ checked, source }) => {
+    if (source === "init") return;
+    selection.setConvertQuotes(checked);
     scheduleConvert();
   },
 });
@@ -439,6 +497,35 @@ document.getElementById("load-sample-confirm")?.addEventListener("click", () => 
   loadSampleDialog?.closeDialog();
   loadSampleIntoInput();
 });
+
+const outputTabularCopyBtn = document.getElementById("output-tabular-copy");
+if (outputTabularCopyBtn instanceof HTMLButtonElement) {
+  outputTabularCopyBtn.prepend(
+    createIcon("copy", { className: "btn-icon-svg" })
+  );
+
+  prepareButtonLabelFlash(outputTabularCopyBtn, {
+    idle: "Copy",
+    success: "Copied",
+    fail: "Failed",
+  });
+
+  const resetOutputTabularCopyLabel = () => {
+    setButtonLabelFlash(outputTabularCopyBtn, "Copy");
+    outputTabularCopyBtn.setAttribute("aria-label", "Copy table");
+  };
+
+  outputTabularCopyBtn.addEventListener("click", async () => {
+    const table = lastOutputTable;
+    if (!table?.columns?.length) return;
+    const text = formatClipboardTable(table.columns, table.rows);
+    const ok = await copyText(text);
+    flashButtonLabel(outputTabularCopyBtn, ok, {
+      durationMs: 1500,
+      reset: resetOutputTabularCopyLabel,
+    });
+  });
+}
 
 inputJsonApi = initCodeBlock(inputSurfaces.json);
 inputMJsonApi = initCodeBlock(inputSurfaces["m-json"]);

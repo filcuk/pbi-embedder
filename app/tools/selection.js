@@ -14,6 +14,7 @@
  *   quoteStyle: QuoteStyle,
  *   compact: boolean,
  *   includeParsing: boolean,
+ *   convertQuotes: boolean,
  * }} ToolSelection
  */
 
@@ -78,8 +79,10 @@ export function formatConversionHeading({ family, input, output }) {
  *   setQuoteStyle: (quoteStyle: QuoteStyle) => ToolSelection,
  *   setCompact: (compact: boolean) => ToolSelection,
  *   setIncludeParsing: (includeParsing: boolean) => ToolSelection,
+ *   setConvertQuotes: (convertQuotes: boolean) => ToolSelection,
  *   heading: () => string,
  *   showOptions: () => boolean,
+ *   showConvertQuotes: () => boolean,
  * }}
  */
 export function createSelection(initial = {}) {
@@ -95,6 +98,8 @@ export function createSelection(initial = {}) {
   let quoteStyle = initial.quoteStyle === "single" ? "single" : "escaped";
   let compact = Boolean(initial.compact);
   let includeParsing = Boolean(initial.includeParsing);
+  let convertQuotes =
+    initial.convertQuotes === undefined ? true : Boolean(initial.convertQuotes);
 
   if (output === input) {
     output = defaultOutputForInput(input);
@@ -102,7 +107,15 @@ export function createSelection(initial = {}) {
 
   /** @returns {ToolSelection} */
   function snapshot() {
-    return { family, input, output, quoteStyle, compact, includeParsing };
+    return {
+      family,
+      input,
+      output,
+      quoteStyle,
+      compact,
+      includeParsing,
+      convertQuotes,
+    };
   }
 
   return {
@@ -134,11 +147,18 @@ export function createSelection(initial = {}) {
       includeParsing = Boolean(next);
       return snapshot();
     },
+    setConvertQuotes(next) {
+      convertQuotes = Boolean(next);
+      return snapshot();
+    },
     heading() {
       return formatConversionHeading(snapshot());
     },
     showOptions() {
       return output === "m-json";
+    },
+    showConvertQuotes() {
+      return quoteStyle === "single" && includeParsing;
     },
   };
 }

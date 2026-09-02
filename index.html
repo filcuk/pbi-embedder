@@ -174,7 +174,7 @@
             />
           </div>
 
-          <button type="button" class="btn btn-slim" id="load-sample-btn">
+          <button type="button" class="btn" id="load-sample-btn">
             Load sample
           </button>
         </div>
@@ -187,20 +187,25 @@
           </h2>
         </header>
         <div class="content-tier-body">
-          <div
-            class="banner banner-error hidden"
-            data-convert-error
-            role="status"
-            hidden
-          >
-            <span data-icon="error" data-icon-class="banner-icon" aria-hidden="true"></span>
-            <p class="banner-body" id="convert-error-message">
-              Could not convert the current input.
-            </p>
-          </div>
-
           <section class="content-section" aria-labelledby="input-heading">
             <h3 id="input-heading" class="section-title">Input</h3>
+
+            <div
+              class="banner banner-error hidden"
+              data-convert-error
+              role="status"
+              hidden
+            >
+              <span
+                class="banner-icon"
+                data-icon="error"
+                data-icon-class="banner-icon-svg"
+                aria-hidden="true"
+              ></span>
+              <span class="banner-body" id="convert-error-message">
+                Could not convert the current input.
+              </span>
+            </div>
 
             <div
               class="tabular-input"
@@ -214,7 +219,7 @@
               data-code-mode="edit"
               data-code-toolbar="top"
               data-code-toolbar-actions="clear,copy,paste,maximize,line-numbers"
-              data-code-surface-actions="copy,maximize"
+              data-code-surface-actions="none"
               data-expandable-surface
               data-expandable-surface-label="JSON input"
               hidden
@@ -230,7 +235,7 @@
               data-code-mode="edit"
               data-code-toolbar="top"
               data-code-toolbar-actions="clear,copy,paste,maximize,line-numbers"
-              data-code-surface-actions="copy,maximize"
+              data-code-surface-actions="none"
               data-expandable-surface
               data-expandable-surface-label="M-JSON input"
               hidden
@@ -253,14 +258,20 @@
               role="status"
               hidden
             >
-              <span data-icon="info" data-icon-class="banner-icon" aria-hidden="true"></span>
-              <p class="banner-body">
-                Single quotes may not be supported in all Mashup Engines.
-              </p>
+              <span
+                class="banner-icon"
+                data-icon="info"
+                data-icon-class="banner-icon-svg"
+                aria-hidden="true"
+              ></span>
+              <span class="banner-body">
+                Single quotes may not be supported. Convert to double quotes before parsing the JSON.
+              </span>
             </div>
             <div class="section-panel" id="options-panel">
               <div class="panel-stack">
                 <div class="panel-row" id="quote-style-row">
+                  <span class="field-label" id="quote-style-label">Quotes</span>
                   <div
                     class="segmented-control segmented-control--slim"
                     id="quote-style-control"
@@ -269,7 +280,7 @@
                     <div
                       class="segmented-control-list"
                       role="radiogroup"
-                      aria-label="M-JSON quote style"
+                      aria-labelledby="quote-style-label"
                     >
                       <button
                         type="button"
@@ -356,6 +367,36 @@
                     value="false"
                   />
                 </div>
+                <div
+                  class="toggle hidden"
+                  id="convert-quotes-toggle"
+                  data-toggle-default="true"
+                  hidden
+                >
+                  <button
+                    type="button"
+                    class="toggle-btn"
+                    role="switch"
+                    aria-checked="true"
+                  >
+                    <span class="toggle-track" aria-hidden="true">
+                      <span class="toggle-thumb">
+                        <span
+                          data-icon="check"
+                          data-icon-class="toggle-thumb-icon toggle-thumb-icon--on"
+                          aria-hidden="true"
+                        ></span>
+                      </span>
+                    </span>
+                    <span class="toggle-label">Convert quotes</span>
+                  </button>
+                  <input
+                    type="hidden"
+                    class="toggle-value"
+                    name="convert-quotes"
+                    value="true"
+                  />
+                </div>
               </div>
             </div>
           </section>
@@ -369,6 +410,18 @@
               data-table-sortable
               hidden
             >
+              <div class="panel-row" id="output-tabular-toolbar">
+                <button
+                  type="button"
+                  class="btn btn-label-flash"
+                  id="output-tabular-copy"
+                  aria-label="Copy table"
+                  data-tooltip="Copy for Excel"
+                  disabled
+                >
+                  <span class="btn-label-flash__label">Copy</span>
+                </button>
+              </div>
               <div class="table-wrap">
                 <table class="table table--compact table--striped" aria-label="Tabular output">
                   <thead>
@@ -385,7 +438,7 @@
               data-code-mode="select"
               data-code-toolbar="top"
               data-code-toolbar-actions="copy,maximize,line-numbers"
-              data-code-surface-actions="copy,maximize"
+              data-code-surface-actions="none"
               data-expandable-surface
               data-expandable-surface-label="JSON output"
               hidden
@@ -401,7 +454,7 @@
               data-code-mode="select"
               data-code-toolbar="top"
               data-code-toolbar-actions="copy,maximize,line-numbers"
-              data-code-surface-actions="copy,maximize"
+              data-code-surface-actions="none"
               data-expandable-surface
               data-expandable-surface-label="M-JSON output"
             >

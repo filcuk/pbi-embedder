@@ -230,17 +230,24 @@ export function encodeJsonText(records, { pretty = true } = {}) {
  * Pretty (default): outer `"` on their own first/last lines, indented JSON body.
  * Compact: single-line `"…"` wrapper (previous behaviour).
  * Include parsing: wrap in a `let … in` with JSON + Source (table) steps.
+ * Convert quotes (single + include parsing): Text.Replace `'` → `"` before Json.Document.
  *
  * @param {RecordRow[]} records
  * @param {{
  *   quoteStyle?: QuoteStyle,
  *   compact?: boolean,
  *   includeParsing?: boolean,
+ *   convertQuotes?: boolean,
  * }} [options]
  */
 export function encodeMJsonText(
   records,
-  { quoteStyle = "escaped", compact = false, includeParsing = false } = {}
+  {
+    quoteStyle = "escaped",
+    compact = false,
+    includeParsing = false,
+    convertQuotes = true,
+  } = {}
 ) {
   const json = compact
     ? JSON.stringify(records)
@@ -250,18 +257,28 @@ export function encodeMJsonText(
       ? json.replace(/"/g, "'")
       : escapeMTextBody(json);
   const literal = compact ? `"${body}"` : `"\n${body}\n"`;
-  return includeParsing ? wrapMJsonWithParsing(literal) : literal;
+  if (!includeParsing) return literal;
+  return wrapMJsonWithParsing(literal, {
+    convertQuotes: quoteStyle === "single" && convertQuotes,
+  });
 }
 
 /**
  * Wrap an M text literal in a Power Query query that parses it to a table.
  * @param {string} mJsonLiteral
+ * @param {{ convertQuotes?: boolean }} [options]
  */
-export function wrapMJsonWithParsing(mJsonLiteral) {
+export function wrapMJsonWithParsing(
+  mJsonLiteral,
+  { convertQuotes = false } = {}
+) {
+  const jsonDocument = convertQuotes
+    ? `Json.Document(Text.Replace(JSON, "'", """"))`
+    : "Json.Document(JSON)";
   return [
     "let",
     `    JSON = ${mJsonLiteral},`,
-    "    Source = Table.FromRecords(Json.Document(JSON))",
+    `    Source = Table.FromRecords(${jsonDocument})`,
     "in",
     "    Source",
   ].join("\n");
@@ -327,6 +344,7 @@ export function parseInput(format, value) {
  *   quoteStyle?: QuoteStyle,
  *   compact?: boolean,
  *   includeParsing?: boolean,
+ *   convertQuotes?: boolean,
  * }} [options]
  * @returns {{ table: TableData, text: string | null }}
  */
@@ -334,7 +352,12 @@ export function encodeOutput(
   format,
   table,
   records,
-  { quoteStyle = "escaped", compact = false, includeParsing = false } = {}
+  {
+    quoteStyle = "escaped",
+    compact = false,
+    includeParsing = false,
+    convertQuotes = true,
+  } = {}
 ) {
   if (format === "tabular") {
     return { table, text: null };
@@ -346,6 +369,7 @@ export function encodeOutput(
         quoteStyle,
         compact,
         includeParsing,
+        convertQuotes,
       }),
     };
   }
@@ -361,6 +385,7 @@ export function encodeOutput(
  *   quoteStyle?: QuoteStyle,
  *   compact?: boolean,
  *   includeParsing?: boolean,
+ *   convertQuotes?: boolean,
  * }} options
  * @returns {ConvertResult}
  */
@@ -371,6 +396,7 @@ export function convert({
   quoteStyle = "escaped",
   compact = false,
   includeParsing = false,
+  convertQuotes = true,
 }) {
   try {
     if (inputFormat === outputFormat) {
@@ -385,7 +411,7 @@ export function convert({
       outputFormat,
       parsed.table,
       parsed.records,
-      { quoteStyle, compact, includeParsing }
+      { quoteStyle, compact, includeParsing, convertQuotes }
     );
 
     return {

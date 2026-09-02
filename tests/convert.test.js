@@ -144,6 +144,25 @@ test("encodeMJsonText include parsing wraps let query", () => {
     [
       "let",
       `    JSON = "[{'Name':'Alice'}]",`,
+      `    Source = Table.FromRecords(Json.Document(Text.Replace(JSON, "'", """")))`,
+      "in",
+      "    Source",
+    ].join("\n")
+  );
+});
+
+test("encodeMJsonText include parsing can skip quote conversion", () => {
+  const encoded = encodeMJsonText([{ Name: "Alice" }], {
+    quoteStyle: "single",
+    compact: true,
+    includeParsing: true,
+    convertQuotes: false,
+  });
+  assert.equal(
+    encoded,
+    [
+      "let",
+      `    JSON = "[{'Name':'Alice'}]",`,
       "    Source = Table.FromRecords(Json.Document(JSON))",
       "in",
       "    Source",
