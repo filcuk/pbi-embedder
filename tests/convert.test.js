@@ -56,13 +56,68 @@ test("normalize rejects non-record JSON shapes via parseJsonText", () => {
   assert.throws(() => parseJsonText("{"), /Invalid JSON/);
 });
 
-test("encodeMJsonText single-quote form", () => {
-  const encoded = encodeMJsonText([{ Name: "Alice", Age: 30 }], "single");
+test("encodeMJsonText pretty escaped-quote form (default)", () => {
+  const encoded = encodeMJsonText([{ Name: "Alice", Age: 30 }]);
+  assert.equal(
+    encoded,
+    `"
+[
+  {
+    ""Name"": ""Alice"",
+    ""Age"": 30
+  }
+]
+"`
+  );
+});
+
+test("encodeMJsonText pretty single-quote form", () => {
+  const encoded = encodeMJsonText([{ Name: "Alice", Age: 30 }], {
+    quoteStyle: "single",
+  });
+  assert.equal(
+    encoded,
+    `"
+[
+  {
+    'Name': 'Alice',
+    'Age': 30
+  }
+]
+"`
+  );
+});
+
+test("encodeMJsonText compact single-quote form", () => {
+  const encoded = encodeMJsonText([{ Name: "Alice", Age: 30 }], {
+    quoteStyle: "single",
+    compact: true,
+  });
   assert.equal(encoded, `"[{'Name':'Alice','Age':30}]"`);
 });
 
-test("encodeMJsonText escaped-quote form", () => {
-  const encoded = encodeMJsonText([{ Name: "Alice", Age: 30 }], "escaped");
+test("encodeMJsonText pretty escaped-quote form explicit", () => {
+  const encoded = encodeMJsonText([{ Name: "Alice", Age: 30 }], {
+    quoteStyle: "escaped",
+  });
+  assert.equal(
+    encoded,
+    `"
+[
+  {
+    ""Name"": ""Alice"",
+    ""Age"": 30
+  }
+]
+"`
+  );
+});
+
+test("encodeMJsonText compact escaped-quote form", () => {
+  const encoded = encodeMJsonText([{ Name: "Alice", Age: 30 }], {
+    quoteStyle: "escaped",
+    compact: true,
+  });
   assert.equal(encoded, `"[{""Name"":""Alice"",""Age"":30}]"`);
 });
 
@@ -78,27 +133,85 @@ test("parseMJsonText accepts single-quote and escaped forms", () => {
   ]);
 });
 
+test("encodeMJsonText include parsing wraps let query", () => {
+  const encoded = encodeMJsonText([{ Name: "Alice" }], {
+    quoteStyle: "single",
+    compact: true,
+    includeParsing: true,
+  });
+  assert.equal(
+    encoded,
+    [
+      "let",
+      `    JSON = "[{'Name':'Alice'}]",`,
+      "    Source = Table.FromRecords(Json.Document(JSON))",
+      "in",
+      "    Source",
+    ].join("\n")
+  );
+});
+
+test("parseMJsonText accepts pretty wrapped forms", () => {
+  const prettySingle = encodeMJsonText([{ Name: "Alice" }], {
+    quoteStyle: "single",
+  });
+  const prettyEscaped = encodeMJsonText([{ Name: "Alice" }], {
+    quoteStyle: "escaped",
+  });
+  assert.deepEqual(parseMJsonText(prettySingle), [{ Name: "Alice" }]);
+  assert.deepEqual(parseMJsonText(prettyEscaped), [{ Name: "Alice" }]);
+});
+
+test("parseMJsonText accepts include-parsing let query", () => {
+  const query = encodeMJsonText([{ Name: "Alice", Age: 30 }], {
+    quoteStyle: "escaped",
+    includeParsing: true,
+  });
+  assert.deepEqual(parseMJsonText(query), [{ Name: "Alice", Age: 30 }]);
+});
+
 test("unwrapQuotedPayload and unescapeMTextBody", () => {
   assert.equal(unwrapQuotedPayload(`"[{""A"":1}]"`), `[{"A":1}]`);
   assert.equal(unescapeMTextBody(`[{""A"":1}]`), `[{"A":1}]`);
   assert.equal(unwrapQuotedPayload(`[{"A":1}]`), `[{"A":1}]`);
 });
 
-test("convert tabular → m-json (single quotes)", () => {
+test("convert tabular → m-json (pretty escaped by default)", () => {
+  const table = recordsToTable(SAMPLE_RECORDS);
+  const result = convert({
+    inputFormat: "tabular",
+    outputFormat: "m-json",
+    value: table,
+  });
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.text, encodeMJsonText(SAMPLE_RECORDS));
+  assert.ok(result.text?.startsWith(`"\n`));
+  assert.ok(result.text?.endsWith(`\n"`));
+});
+
+test("convert tabular → m-json compact", () => {
   const table = recordsToTable(SAMPLE_RECORDS);
   const result = convert({
     inputFormat: "tabular",
     outputFormat: "m-json",
     value: table,
     quoteStyle: "single",
+    compact: true,
   });
   assert.equal(result.ok, true);
   if (!result.ok) return;
-  assert.equal(result.text, encodeMJsonText(SAMPLE_RECORDS, "single"));
+  assert.equal(
+    result.text,
+    encodeMJsonText(SAMPLE_RECORDS, { quoteStyle: "single", compact: true })
+  );
 });
 
 test("convert m-json → tabular", () => {
-  const text = encodeMJsonText(SAMPLE_RECORDS, "escaped");
+  const text = encodeMJsonText(SAMPLE_RECORDS, {
+    quoteStyle: "escaped",
+    compact: true,
+  });
   const result = convert({
     inputFormat: "m-json",
     outputFormat: "tabular",

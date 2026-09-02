@@ -1,6 +1,7 @@
 import { initShell } from "./shell/shell.js";
 import { setHidden } from "./utils/dom.js";
 import { initSegmentedControl } from "./components/segmented-control.js";
+import { initToggle } from "./components/toggle.js";
 import { initTabularInput } from "./components/tabular-input.js";
 import { initCodeBlock } from "./components/code-block.js";
 import { initExpandableSurfaces } from "./components/expandable-surface.js";
@@ -13,6 +14,7 @@ import {
   encodeMJsonText,
   parseInput,
 } from "./tools/convert.js";
+import { renderOutputTable } from "./tools/output-table.js";
 
 initShell({
   headingLinks: false,
@@ -23,14 +25,17 @@ const selection = createSelection({
   family: "m",
   input: "tabular",
   output: "m-json",
-  quoteStyle: "single",
+  quoteStyle: "escaped",
+  compact: false,
+  includeParsing: false,
 });
 
 const headingEl = document.getElementById("conversion-heading");
-const quoteStyleRow = document.getElementById("quote-style-row");
+const optionsSection = document.getElementById("options-section");
 const outputFormatControl = document.getElementById("output-format-control");
 const errorBanner = document.querySelector("[data-convert-error]");
 const errorMessageEl = document.getElementById("convert-error-message");
+const singleQuoteWarning = document.querySelector("[data-single-quote-warning]");
 
 const inputSurfaces = {
   tabular: document.getElementById("input-tabular"),
@@ -55,11 +60,9 @@ const SAMPLE_ROWS = [
   { id: "r2", cells: { name: "Gadget", qty: 3, active: false } },
 ];
 
-const EMPTY_TABLE = { columns: [...SAMPLE_COLUMNS], rows: [] };
-
 /** @type {ReturnType<typeof initTabularInput> | null} */
 let inputTabularApi = null;
-/** @type {ReturnType<typeof initTabularInput> | null} */
+/** @type {{ destroy: () => void } | null} */
 let outputTabularApi = null;
 /** @type {ReturnType<typeof initCodeBlock> | null} */
 let inputJsonApi = null;
@@ -111,7 +114,15 @@ function syncChrome() {
     headingEl.textContent = selection.heading();
   }
 
-  setHidden(quoteStyleRow, !selection.showQuoteStyle());
+  const showOptions = selection.showOptions();
+  setHidden(optionsSection, !showOptions);
+  if (singleQuoteWarning) {
+    if (showOptions && state.quoteStyle === "single") {
+      showBanner(singleQuoteWarning);
+    } else {
+      hideBanner(singleQuoteWarning);
+    }
+  }
   syncOutputAvailability(state.input);
   syncSurfaceVisibility(inputSurfaces, state.input);
   syncSurfaceVisibility(outputSurfaces, state.output);
@@ -159,11 +170,12 @@ function writeInputValue(format, value) {
         value && typeof value === "object"
           ? value
           : { columns: [], rows: [] };
-      if (table.columns.length || table.rows.length) {
-        inputTabularApi?.setData(table, { emitEvent: false });
-      } else {
-        inputTabularApi?.setData(EMPTY_TABLE, { emitEvent: false });
-      }
+      inputTabularApi?.setData(
+        table.columns.length || table.rows.length
+          ? table
+          : { columns: SAMPLE_COLUMNS, rows: [] },
+        { emitEvent: false }
+      );
       return;
     }
     const text = typeof value === "string" ? value : "";
@@ -181,9 +193,9 @@ function writeInputValue(format, value) {
  * Best-effort move of the current payload into a newly selected input format.
  * @param {import("./tools/selection.js").Format} previousFormat
  * @param {import("./tools/selection.js").Format} nextFormat
- * @param {import("./tools/selection.js").QuoteStyle} quoteStyle
+ * @param {Pick<import("./tools/selection.js").ToolSelection, "quoteStyle" | "compact">} options
  */
-function migrateInputFormat(previousFormat, nextFormat, quoteStyle) {
+function migrateInputFormat(previousFormat, nextFormat, options) {
   const previousValue = readInputValue(previousFormat);
   try {
     const parsed = parseInput(previousFormat, previousValue);
@@ -195,7 +207,13 @@ function migrateInputFormat(previousFormat, nextFormat, quoteStyle) {
       writeInputValue("json", encodeJsonText(parsed.records));
       return;
     }
-    writeInputValue("m-json", encodeMJsonText(parsed.records, quoteStyle));
+    writeInputValue(
+      "m-json",
+      encodeMJsonText(parsed.records, {
+        quoteStyle: options.quoteStyle,
+        compact: options.compact,
+      })
+    );
   } catch {
     if (nextFormat === "tabular") {
       writeInputValue("tabular", {
@@ -217,11 +235,10 @@ function writeOutput(outputFormat, result) {
   suppressConvert = true;
   try {
     if (outputFormat === "tabular") {
-      outputTabularApi?.setData(
-        result.table.columns.length
-          ? result.table
-          : EMPTY_TABLE,
-        { emitEvent: false }
+      outputTabularApi = renderOutputTable(
+        outputSurfaces.tabular,
+        result.table,
+        outputTabularApi
       );
       return;
     }
@@ -246,6 +263,8 @@ function runConvert() {
     outputFormat: state.output,
     value,
     quoteStyle: state.quoteStyle,
+    compact: state.compact,
+    includeParsing: state.includeParsing,
   });
 
   if (!result.ok) {
@@ -312,7 +331,13 @@ initSegmentedControl(document.getElementById("input-format-control"), {
     const state = selection.setInput(
       /** @type {import("./tools/selection.js").Format} */ (value)
     );
-    migrateInputFormat(previous.input, state.input, state.quoteStyle);
+    migrateInputFormat(previous.input, state.input, {
+      quoteStyle: state.quoteStyle,
+      compact: state.compact,
+    });
+    // Enable the new default output option before selecting it — otherwise
+    // selectValue no-ops while that segment is still disabled from the prior input.
+    syncOutputAvailability(state.input);
     outputFormatApi?.selectValue(state.output, { emit: false });
     syncChrome();
     scheduleConvert();
@@ -323,6 +348,23 @@ initSegmentedControl(document.getElementById("quote-style-control"), {
   onChange: ({ value, source }) => {
     if (source === "init") return;
     selection.setQuoteStyle(/** @type {"single" | "escaped"} */ (value));
+    syncChrome();
+    scheduleConvert();
+  },
+});
+
+initToggle(document.getElementById("compact-output-toggle"), {
+  onChange: ({ checked, source }) => {
+    if (source === "init") return;
+    selection.setCompact(checked);
+    scheduleConvert();
+  },
+});
+
+initToggle(document.getElementById("include-parsing-toggle"), {
+  onChange: ({ checked, source }) => {
+    if (source === "init") return;
+    selection.setIncludeParsing(checked);
     scheduleConvert();
   },
 });
@@ -335,12 +377,6 @@ inputTabularApi = initTabularInput(inputSurfaces.tabular, {
   },
 });
 
-outputTabularApi = initTabularInput(outputSurfaces.tabular, {
-  columns: SAMPLE_COLUMNS,
-  rows: [],
-  disabled: true,
-});
-
 inputJsonApi = initCodeBlock(inputSurfaces.json);
 inputMJsonApi = initCodeBlock(inputSurfaces["m-json"]);
 outputJsonApi = initCodeBlock(outputSurfaces.json);
@@ -351,6 +387,7 @@ observeCodeSource(inputSurfaces["m-json"]);
 
 initExpandableSurfaces(document);
 initIcons(errorBanner ?? undefined);
+initIcons(singleQuoteWarning ?? undefined);
 
 syncChrome();
 scheduleConvert();

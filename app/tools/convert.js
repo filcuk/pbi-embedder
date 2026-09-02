@@ -189,11 +189,12 @@ export function unwrapQuotedPayload(text) {
 
 /**
  * Parse M-encoded JSON (single-quote or escaped-quote forms).
+ * Also accepts a let-query that assigns the payload to a `JSON` step.
  * @param {string} text
  * @returns {RecordRow[]}
  */
 export function parseMJsonText(text) {
-  const trimmed = String(text ?? "").trim();
+  const trimmed = extractMJsonLiteral(String(text ?? "").trim());
   if (!trimmed) {
     throw new Error("M-JSON input is empty.");
   }
@@ -225,15 +226,75 @@ export function encodeJsonText(records, { pretty = true } = {}) {
 }
 
 /**
+ * Encode records as M-JSON.
+ * Pretty (default): outer `"` on their own first/last lines, indented JSON body.
+ * Compact: single-line `"…"` wrapper (previous behaviour).
+ * Include parsing: wrap in a `let … in` with JSON + Source (table) steps.
+ *
  * @param {RecordRow[]} records
- * @param {QuoteStyle} [quoteStyle]
+ * @param {{
+ *   quoteStyle?: QuoteStyle,
+ *   compact?: boolean,
+ *   includeParsing?: boolean,
+ * }} [options]
  */
-export function encodeMJsonText(records, quoteStyle = "single") {
-  const json = JSON.stringify(records);
-  if (quoteStyle === "escaped") {
-    return `"${escapeMTextBody(json)}"`;
+export function encodeMJsonText(
+  records,
+  { quoteStyle = "escaped", compact = false, includeParsing = false } = {}
+) {
+  const json = compact
+    ? JSON.stringify(records)
+    : JSON.stringify(records, null, 2);
+  const body =
+    quoteStyle === "single"
+      ? json.replace(/"/g, "'")
+      : escapeMTextBody(json);
+  const literal = compact ? `"${body}"` : `"\n${body}\n"`;
+  return includeParsing ? wrapMJsonWithParsing(literal) : literal;
+}
+
+/**
+ * Wrap an M text literal in a Power Query query that parses it to a table.
+ * @param {string} mJsonLiteral
+ */
+export function wrapMJsonWithParsing(mJsonLiteral) {
+  return [
+    "let",
+    `    JSON = ${mJsonLiteral},`,
+    "    Source = Table.FromRecords(Json.Document(JSON))",
+    "in",
+    "    Source",
+  ].join("\n");
+}
+
+/**
+ * If `text` is a let-query with a `JSON = "…"` step, return that string literal;
+ * otherwise return the trimmed original text.
+ * @param {string} text
+ */
+export function extractMJsonLiteral(text) {
+  const trimmed = String(text ?? "").trim();
+  const marker = trimmed.match(/\bJSON\s*=\s*"/i);
+  if (!marker || marker.index === undefined) return trimmed;
+
+  const openIndex = marker.index + marker[0].length - 1;
+  let i = openIndex + 1;
+  let literal = '"';
+  while (i < trimmed.length) {
+    const ch = trimmed[i];
+    if (ch === '"') {
+      if (trimmed[i + 1] === '"') {
+        literal += '""';
+        i += 2;
+        continue;
+      }
+      literal += '"';
+      return literal;
+    }
+    literal += ch;
+    i += 1;
   }
-  return `"${json.replace(/"/g, "'")}"`;
+  return trimmed;
 }
 
 /**
@@ -262,15 +323,31 @@ export function parseInput(format, value) {
  * @param {Format} format
  * @param {TableData} table
  * @param {RecordRow[]} records
- * @param {{ quoteStyle?: QuoteStyle }} [options]
+ * @param {{
+ *   quoteStyle?: QuoteStyle,
+ *   compact?: boolean,
+ *   includeParsing?: boolean,
+ * }} [options]
  * @returns {{ table: TableData, text: string | null }}
  */
-export function encodeOutput(format, table, records, { quoteStyle = "single" } = {}) {
+export function encodeOutput(
+  format,
+  table,
+  records,
+  { quoteStyle = "escaped", compact = false, includeParsing = false } = {}
+) {
   if (format === "tabular") {
     return { table, text: null };
   }
   if (format === "m-json") {
-    return { table, text: encodeMJsonText(records, quoteStyle) };
+    return {
+      table,
+      text: encodeMJsonText(records, {
+        quoteStyle,
+        compact,
+        includeParsing,
+      }),
+    };
   }
   return { table, text: encodeJsonText(records) };
 }
@@ -282,6 +359,8 @@ export function encodeOutput(format, table, records, { quoteStyle = "single" } =
  *   outputFormat: Format,
  *   value: TableData | string | null | undefined,
  *   quoteStyle?: QuoteStyle,
+ *   compact?: boolean,
+ *   includeParsing?: boolean,
  * }} options
  * @returns {ConvertResult}
  */
@@ -289,7 +368,9 @@ export function convert({
   inputFormat,
   outputFormat,
   value,
-  quoteStyle = "single",
+  quoteStyle = "escaped",
+  compact = false,
+  includeParsing = false,
 }) {
   try {
     if (inputFormat === outputFormat) {
@@ -304,7 +385,7 @@ export function convert({
       outputFormat,
       parsed.table,
       parsed.records,
-      { quoteStyle }
+      { quoteStyle, compact, includeParsing }
     );
 
     return {

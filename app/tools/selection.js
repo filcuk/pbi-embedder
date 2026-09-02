@@ -1,5 +1,5 @@
 /**
- * Tooling selection — family (M / DAX), input/output formats, M-JSON quote style.
+ * Tooling selection — family (M / DAX), input/output formats, M-JSON options.
  * Pure helpers for the converter chrome; no DOM.
  */
 
@@ -12,6 +12,8 @@
  *   input: Format,
  *   output: Format,
  *   quoteStyle: QuoteStyle,
+ *   compact: boolean,
+ *   includeParsing: boolean,
  * }} ToolSelection
  */
 
@@ -33,8 +35,8 @@ export const FAMILY_LABELS = Object.freeze({
 
 /** @type {Readonly<Record<QuoteStyle, string>>} */
 export const QUOTE_STYLE_LABELS = Object.freeze({
-  single: "Single quotes",
   escaped: "Escaped quotes",
+  single: "Single quotes",
 });
 
 /**
@@ -74,8 +76,10 @@ export function formatConversionHeading({ family, input, output }) {
  *   setInput: (input: Format) => ToolSelection,
  *   setOutput: (output: Format) => ToolSelection,
  *   setQuoteStyle: (quoteStyle: QuoteStyle) => ToolSelection,
+ *   setCompact: (compact: boolean) => ToolSelection,
+ *   setIncludeParsing: (includeParsing: boolean) => ToolSelection,
  *   heading: () => string,
- *   showQuoteStyle: () => boolean,
+ *   showOptions: () => boolean,
  * }}
  */
 export function createSelection(initial = {}) {
@@ -88,7 +92,9 @@ export function createSelection(initial = {}) {
     ? initial.output
     : defaultOutputForInput(input);
   /** @type {QuoteStyle} */
-  let quoteStyle = initial.quoteStyle === "escaped" ? "escaped" : "single";
+  let quoteStyle = initial.quoteStyle === "single" ? "single" : "escaped";
+  let compact = Boolean(initial.compact);
+  let includeParsing = Boolean(initial.includeParsing);
 
   if (output === input) {
     output = defaultOutputForInput(input);
@@ -96,7 +102,7 @@ export function createSelection(initial = {}) {
 
   /** @returns {ToolSelection} */
   function snapshot() {
-    return { family, input, output, quoteStyle };
+    return { family, input, output, quoteStyle, compact, includeParsing };
   }
 
   return {
@@ -117,13 +123,21 @@ export function createSelection(initial = {}) {
       return snapshot();
     },
     setQuoteStyle(next) {
-      quoteStyle = next === "escaped" ? "escaped" : "single";
+      quoteStyle = next === "single" ? "single" : "escaped";
+      return snapshot();
+    },
+    setCompact(next) {
+      compact = Boolean(next);
+      return snapshot();
+    },
+    setIncludeParsing(next) {
+      includeParsing = Boolean(next);
       return snapshot();
     },
     heading() {
       return formatConversionHeading(snapshot());
     },
-    showQuoteStyle() {
+    showOptions() {
       return output === "m-json";
     },
   };

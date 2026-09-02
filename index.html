@@ -8,10 +8,13 @@
       content="Convert tabular data, JSON, and M-encoded JSON for Power Query."
     />
     <title>Power BI Embedder</title>
-    <link rel="icon" href="app/res/app-light.svg" type="image/svg+xml" data-brand-icon />
+    <link rel="icon" href="app/res/app.svg" type="image/svg+xml" data-brand-icon />
     <script>
       window.__MICROAPP__ = {
         themeStorageKey: "pbi-embedder-theme",
+        appIcon: "app/res/app.svg",
+        appIconLight: "",
+        appIconDark: "",
       };
     </script>
     <script src="app/theme-init.js"></script>
@@ -22,19 +25,12 @@
     <header>
       <div class="site-brand">
         <img
-          class="site-logo brand-icon--light"
-          src="app/res/app-light.svg"
+          class="site-logo"
+          src="app/res/app.svg"
           alt="Power BI Embedder"
           width="40"
           height="40"
-        />
-        <img
-          class="site-logo brand-icon--dark"
-          src="app/res/app-dark.svg"
-          alt=""
-          width="40"
-          height="40"
-          aria-hidden="true"
+          data-brand-icon
         />
         <h1>Power BI Embedder</h1>
       </div>
@@ -45,9 +41,8 @@
 
     <main id="main">
       <section class="content-section" aria-labelledby="tooling">
+        <h2 id="tooling" class="section-title">Tooling</h2>
         <div class="panel-row tooling-bar">
-          <h2 id="tooling" class="section-title">Tooling</h2>
-
           <div
             class="segmented-control"
             id="family-control"
@@ -179,65 +174,29 @@
             />
           </div>
         </div>
+      </section>
 
-        <h2 id="conversion-heading" class="conversion-title">
-          M: Tabular → M-JSON
-        </h2>
-
-        <div class="panel-row quote-style-row" id="quote-style-row">
+      <section class="content-tier" aria-labelledby="conversion-heading">
+        <header class="content-tier-header">
+          <h2 id="conversion-heading" class="segment-title">
+            M: Tabular → M-JSON
+          </h2>
+        </header>
+        <div class="content-tier-body">
           <div
-            class="segmented-control segmented-control--slim"
-            id="quote-style-control"
-            data-segmented-control-default="single"
+            class="banner banner-error hidden"
+            data-convert-error
+            role="status"
+            hidden
           >
-            <div
-              class="segmented-control-list"
-              role="radiogroup"
-              aria-label="M-JSON quote style"
-            >
-              <button
-                type="button"
-                class="segmented-control-item"
-                role="radio"
-                aria-checked="true"
-                data-segmented-control-value="single"
-              >
-                Single quotes
-              </button>
-              <button
-                type="button"
-                class="segmented-control-item"
-                role="radio"
-                aria-checked="false"
-                data-segmented-control-value="escaped"
-              >
-                Escaped quotes
-              </button>
-            </div>
-            <input
-              type="hidden"
-              class="segmented-control-value"
-              name="quote-style"
-              value="single"
-            />
+            <span data-icon="error" data-icon-class="banner-icon" aria-hidden="true"></span>
+            <p class="banner-body" id="convert-error-message">
+              Could not convert the current input.
+            </p>
           </div>
-        </div>
 
-        <div
-          class="banner banner-error hidden"
-          data-convert-error
-          role="status"
-          hidden
-        >
-          <span data-icon="error" data-icon-class="banner-icon" aria-hidden="true"></span>
-          <p class="banner-body" id="convert-error-message">
-            Could not convert the current input.
-          </p>
-        </div>
-
-        <div class="tool-io">
-          <section class="tool-surface" aria-label="Input">
-            <h3 class="panel-title">Input</h3>
+          <section class="content-section" aria-labelledby="input-heading">
+            <h3 id="input-heading" class="section-title">Input</h3>
 
             <div
               class="tabular-input"
@@ -246,7 +205,7 @@
             ></div>
 
             <div
-              class="code-block hidden"
+              class="code-block code-block--full hidden"
               id="input-json"
               data-code-mode="edit"
               data-code-toolbar="top"
@@ -262,7 +221,7 @@
             </div>
 
             <div
-              class="code-block hidden"
+              class="code-block code-block--full hidden"
               id="input-m-json"
               data-code-mode="edit"
               data-code-toolbar="top"
@@ -273,23 +232,151 @@
               hidden
             >
               <div class="code-block-body" data-expandable-surface-trigger>
-                <pre class="line-numbers language-json"><code class="language-json"></code></pre>
+                <pre class="line-numbers language-powerquery"><code class="language-powerquery"></code></pre>
               </div>
             </div>
           </section>
 
-          <section class="tool-surface" aria-label="Output">
-            <h3 class="panel-title">Output</h3>
-
+          <section
+            class="content-section"
+            id="options-section"
+            aria-labelledby="options-heading"
+          >
+            <h3 id="options-heading" class="section-title">Options</h3>
             <div
-              class="tabular-input hidden"
-              id="output-tabular"
-              aria-label="Tabular output"
+              class="banner banner-info hidden"
+              data-single-quote-warning
+              role="status"
               hidden
-            ></div>
+            >
+              <span data-icon="info" data-icon-class="banner-icon" aria-hidden="true"></span>
+              <p class="banner-body">
+                Single quotes may not be supported in all Mashup Engines.
+              </p>
+            </div>
+            <div class="section-panel" id="options-panel">
+              <div class="panel-stack">
+                <div class="panel-row" id="quote-style-row">
+                  <div
+                    class="segmented-control segmented-control--slim"
+                    id="quote-style-control"
+                    data-segmented-control-default="escaped"
+                  >
+                    <div
+                      class="segmented-control-list"
+                      role="radiogroup"
+                      aria-label="M-JSON quote style"
+                    >
+                      <button
+                        type="button"
+                        class="segmented-control-item"
+                        role="radio"
+                        aria-checked="true"
+                        data-segmented-control-value="escaped"
+                      >
+                        Escaped quotes
+                      </button>
+                      <button
+                        type="button"
+                        class="segmented-control-item"
+                        role="radio"
+                        aria-checked="false"
+                        data-segmented-control-value="single"
+                      >
+                        Single quotes
+                      </button>
+                    </div>
+                    <input
+                      type="hidden"
+                      class="segmented-control-value"
+                      name="quote-style"
+                      value="escaped"
+                    />
+                  </div>
+                </div>
+                <div
+                  class="toggle"
+                  id="compact-output-toggle"
+                  data-toggle-default="false"
+                >
+                  <button
+                    type="button"
+                    class="toggle-btn"
+                    role="switch"
+                    aria-checked="false"
+                  >
+                    <span class="toggle-track" aria-hidden="true">
+                      <span class="toggle-thumb">
+                        <span
+                          data-icon="check"
+                          data-icon-class="toggle-thumb-icon toggle-thumb-icon--on"
+                          aria-hidden="true"
+                        ></span>
+                      </span>
+                    </span>
+                    <span class="toggle-label">Compact output</span>
+                  </button>
+                  <input
+                    type="hidden"
+                    class="toggle-value"
+                    name="compact-output"
+                    value="false"
+                  />
+                </div>
+                <div
+                  class="toggle"
+                  id="include-parsing-toggle"
+                  data-toggle-default="false"
+                >
+                  <button
+                    type="button"
+                    class="toggle-btn"
+                    role="switch"
+                    aria-checked="false"
+                  >
+                    <span class="toggle-track" aria-hidden="true">
+                      <span class="toggle-thumb">
+                        <span
+                          data-icon="check"
+                          data-icon-class="toggle-thumb-icon toggle-thumb-icon--on"
+                          aria-hidden="true"
+                        ></span>
+                      </span>
+                    </span>
+                    <span class="toggle-label">Include parsing</span>
+                  </button>
+                  <input
+                    type="hidden"
+                    class="toggle-value"
+                    name="include-parsing"
+                    value="false"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="content-section" aria-labelledby="output-heading">
+            <h3 id="output-heading" class="section-title">Output</h3>
 
             <div
-              class="code-block hidden"
+              class="table-block table-block--wide hidden"
+              id="output-tabular"
+              data-table-sortable
+              hidden
+            >
+              <div class="table-wrap">
+                <table class="table table--compact table--striped" aria-label="Tabular output">
+                  <thead>
+                    <tr></tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div
+              class="code-block code-block--full hidden"
               id="output-json"
               data-code-mode="select"
               data-code-toolbar="top"
@@ -305,7 +392,7 @@
             </div>
 
             <div
-              class="code-block"
+              class="code-block code-block--full"
               id="output-m-json"
               data-code-mode="select"
               data-code-toolbar="top"
@@ -315,7 +402,7 @@
               data-expandable-surface-label="M-JSON output"
             >
               <div class="code-block-body" data-expandable-surface-trigger>
-                <pre class="line-numbers language-json"><code class="language-json"></code></pre>
+                <pre class="line-numbers language-powerquery"><code class="language-powerquery"></code></pre>
               </div>
             </div>
           </section>
@@ -324,6 +411,8 @@
     </main>
 
     <script defer src="app/vendor/prism/prism.min.js"></script>
+    <script defer src="app/vendor/prism/prism-json.min.js"></script>
+    <script defer src="app/vendor/prism/prism-powerquery.min.js"></script>
     <script defer src="app/vendor/prism/prism-line-numbers.min.js"></script>
     <script type="module" src="app/main.js"></script>
   </body>
