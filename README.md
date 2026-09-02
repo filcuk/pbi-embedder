@@ -1,6 +1,6 @@
 # Power BI Embedder
 
-Tools for embedding docments in M and DAX whilst bypassing data limits or file type constraints.
+Tools for embedding documents in M and DAX whilst bypassing data limits or file type constraints.
 
 Live site: [filcuk.github.io/pbi-embedder](https://filcuk.github.io/pbi-embedder/)
 

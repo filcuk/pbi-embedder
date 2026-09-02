@@ -7,7 +7,7 @@ import { initCodeBlock } from "./components/code-block.js";
 import { initExpandableSurfaces } from "./components/expandable-surface.js";
 import { initDialog } from "./components/dialog.js";
 import { initAboutDialog } from "./components/about-dialog.js";
-import { initIcons, createIcon } from "./utils/icons.js";
+import { createIcon } from "./utils/icons.js";
 import { copyText } from "./utils/clipboard.js";
 import {
   prepareButtonLabelFlash,
@@ -595,8 +595,6 @@ observeCodeSource(inputSurfaces.json);
 observeCodeSource(inputSurfaces["m-json"]);
 
 initExpandableSurfaces(document);
-initIcons(errorBanner ?? undefined);
-initIcons(singleQuoteWarning ?? undefined);
 
 isRestoring = true;
 try {

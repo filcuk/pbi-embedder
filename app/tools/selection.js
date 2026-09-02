@@ -34,12 +34,6 @@ export const FAMILY_LABELS = Object.freeze({
   dax: "DAX",
 });
 
-/** @type {Readonly<Record<QuoteStyle, string>>} */
-export const QUOTE_STYLE_LABELS = Object.freeze({
-  escaped: "Escaped quotes",
-  single: "Single quotes",
-});
-
 /**
  * @param {unknown} value
  * @returns {value is Format}
@@ -108,7 +102,9 @@ export function formatConversionLead({ input, output }) {
  */
 export function createSelection(initial = {}) {
   /** @type {Family} */
-  let family = initial.family === "dax" ? "dax" : "m";
+  // DAX control is disabled in the UI; ignore persisted/initial "dax" so the
+  // heading cannot say DAX while the radiogroup stays on M.
+  let family = "m";
   /** @type {Format} */
   let input = isFormat(initial.input) ? initial.input : "tabular";
   /** @type {Format} */
