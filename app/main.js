@@ -23,11 +23,17 @@ import {
   tableToRecords,
 } from "./tools/convert.js";
 import { renderOutputTable } from "./tools/output-table.js";
+import {
+  loadPersistedTooling,
+  savePersistedTooling,
+} from "./tools/persist.js";
 
 initShell({
   headingLinks: false,
   pageNav: false,
 });
+
+const persisted = loadPersistedTooling();
 
 const selection = createSelection({
   family: "m",
@@ -37,6 +43,7 @@ const selection = createSelection({
   compact: false,
   includeParsing: false,
   convertQuotes: true,
+  ...(persisted?.selection ?? {}),
 });
 
 const headingEl = document.getElementById("conversion-heading");
@@ -91,8 +98,12 @@ let outputMJsonApi = null;
 
 /** @type {number | null} */
 let convertFrame = null;
+/** @type {number | null} */
+let persistFrame = null;
 /** Skip recursive convert while we programmatically update surfaces. */
 let suppressConvert = false;
+/** Skip selection/onChange side effects while restoring persisted chrome. */
+let isRestoring = false;
 
 /**
  * Disable the output option that matches the current input format.
@@ -376,13 +387,32 @@ function runConvert() {
 }
 
 function scheduleConvert() {
-  if (suppressConvert) return;
+  if (suppressConvert || isRestoring) return;
   if (convertFrame !== null) {
     cancelAnimationFrame(convertFrame);
   }
   convertFrame = requestAnimationFrame(() => {
     convertFrame = null;
     runConvert();
+    schedulePersist();
+  });
+}
+
+function schedulePersist() {
+  if (isRestoring) return;
+  if (persistFrame !== null) {
+    cancelAnimationFrame(persistFrame);
+  }
+  persistFrame = requestAnimationFrame(() => {
+    persistFrame = null;
+    savePersistedTooling({
+      selection: selection.get(),
+      inputs: {
+        tabular: inputTabularApi?.getData() ?? null,
+        json: inputJsonApi?.getSource() ?? "",
+        "m-json": inputMJsonApi?.getSource() ?? "",
+      },
+    });
   });
 }
 
@@ -403,18 +433,21 @@ function observeCodeSource(surface) {
   });
 }
 
-initSegmentedControl(document.getElementById("family-control"), {
-  onChange: ({ value, source }) => {
-    if (source === "init") return;
-    selection.setFamily(/** @type {"m" | "dax"} */ (value));
-    syncChrome();
-    scheduleConvert();
-  },
-});
+const familyApi = initSegmentedControl(
+  document.getElementById("family-control"),
+  {
+    onChange: ({ value, source }) => {
+      if (source === "init" || isRestoring) return;
+      selection.setFamily(/** @type {"m" | "dax"} */ (value));
+      syncChrome();
+      scheduleConvert();
+    },
+  }
+);
 
 const outputFormatApi = initSegmentedControl(outputFormatControl, {
   onChange: ({ value, source }) => {
-    if (source === "init") return;
+    if (source === "init" || isRestoring) return;
     selection.setOutput(
       /** @type {import("./tools/selection.js").Format} */ (value)
     );
@@ -423,59 +456,74 @@ const outputFormatApi = initSegmentedControl(outputFormatControl, {
   },
 });
 
-initSegmentedControl(document.getElementById("input-format-control"), {
-  onChange: ({ value, source }) => {
-    if (source === "init") return;
-    const previous = selection.get();
-    const state = selection.setInput(
-      /** @type {import("./tools/selection.js").Format} */ (value)
-    );
-    migrateInputFormat(previous.input, state.input, {
-      quoteStyle: state.quoteStyle,
-      compact: state.compact,
-    });
-    // Enable the new default output option before selecting it — otherwise
-    // selectValue no-ops while that segment is still disabled from the prior input.
-    syncOutputAvailability(state.input);
-    outputFormatApi?.selectValue(state.output, { emit: false });
-    syncChrome();
-    scheduleConvert();
-  },
-});
+const inputFormatApi = initSegmentedControl(
+  document.getElementById("input-format-control"),
+  {
+    onChange: ({ value, source }) => {
+      if (source === "init" || isRestoring) return;
+      const previous = selection.get();
+      const state = selection.setInput(
+        /** @type {import("./tools/selection.js").Format} */ (value)
+      );
+      migrateInputFormat(previous.input, state.input, {
+        quoteStyle: state.quoteStyle,
+        compact: state.compact,
+      });
+      // Enable the new default output option before selecting it — otherwise
+      // selectValue no-ops while that segment is still disabled from the prior input.
+      syncOutputAvailability(state.input);
+      outputFormatApi?.selectValue(state.output, { emit: false });
+      syncChrome();
+      scheduleConvert();
+    },
+  }
+);
 
-initSegmentedControl(document.getElementById("quote-style-control"), {
-  onChange: ({ value, source }) => {
-    if (source === "init") return;
-    selection.setQuoteStyle(/** @type {"single" | "escaped"} */ (value));
-    syncChrome();
-    scheduleConvert();
-  },
-});
+const quoteStyleApi = initSegmentedControl(
+  document.getElementById("quote-style-control"),
+  {
+    onChange: ({ value, source }) => {
+      if (source === "init" || isRestoring) return;
+      selection.setQuoteStyle(/** @type {"single" | "escaped"} */ (value));
+      syncChrome();
+      scheduleConvert();
+    },
+  }
+);
 
-initToggle(document.getElementById("compact-output-toggle"), {
-  onChange: ({ checked, source }) => {
-    if (source === "init") return;
-    selection.setCompact(checked);
-    scheduleConvert();
-  },
-});
+const compactToggleApi = initToggle(
+  document.getElementById("compact-output-toggle"),
+  {
+    onChange: ({ checked, source }) => {
+      if (source === "init" || isRestoring) return;
+      selection.setCompact(checked);
+      scheduleConvert();
+    },
+  }
+);
 
-initToggle(document.getElementById("include-parsing-toggle"), {
-  onChange: ({ checked, source }) => {
-    if (source === "init") return;
-    selection.setIncludeParsing(checked);
-    syncChrome();
-    scheduleConvert();
-  },
-});
+const includeParsingToggleApi = initToggle(
+  document.getElementById("include-parsing-toggle"),
+  {
+    onChange: ({ checked, source }) => {
+      if (source === "init" || isRestoring) return;
+      selection.setIncludeParsing(checked);
+      syncChrome();
+      scheduleConvert();
+    },
+  }
+);
 
-initToggle(document.getElementById("convert-quotes-toggle"), {
-  onChange: ({ checked, source }) => {
-    if (source === "init") return;
-    selection.setConvertQuotes(checked);
-    scheduleConvert();
-  },
-});
+const convertQuotesToggleApi = initToggle(
+  document.getElementById("convert-quotes-toggle"),
+  {
+    onChange: ({ checked, source }) => {
+      if (source === "init" || isRestoring) return;
+      selection.setConvertQuotes(checked);
+      scheduleConvert();
+    },
+  }
+);
 
 inputTabularApi = initTabularInput(inputSurfaces.tabular, {
   onChange: () => {
@@ -542,6 +590,32 @@ observeCodeSource(inputSurfaces["m-json"]);
 initExpandableSurfaces(document);
 initIcons(errorBanner ?? undefined);
 initIcons(singleQuoteWarning ?? undefined);
+
+isRestoring = true;
+try {
+  const state = selection.get();
+  familyApi?.selectValue(state.family, { emit: false });
+  inputFormatApi?.selectValue(state.input, { emit: false });
+  syncOutputAvailability(state.input);
+  outputFormatApi?.selectValue(state.output, { emit: false });
+  quoteStyleApi?.selectValue(state.quoteStyle, { emit: false });
+  compactToggleApi?.setChecked(state.compact);
+  includeParsingToggleApi?.setChecked(state.includeParsing);
+  convertQuotesToggleApi?.setChecked(state.convertQuotes);
+
+  const storedInputs = persisted?.inputs;
+  if (storedInputs?.tabular?.columns?.length) {
+    writeInputValue("tabular", storedInputs.tabular);
+  }
+  if (typeof storedInputs?.json === "string") {
+    writeInputValue("json", storedInputs.json);
+  }
+  if (typeof storedInputs?.["m-json"] === "string") {
+    writeInputValue("m-json", storedInputs["m-json"]);
+  }
+} finally {
+  isRestoring = false;
+}
 
 syncChrome();
 scheduleConvert();
