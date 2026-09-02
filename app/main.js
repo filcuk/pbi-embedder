@@ -231,7 +231,8 @@ function writeInputValue(format, value) {
  */
 function isBlankCell(value, type) {
   if (type === "number") return value === null || value === undefined || value === "";
-  if (type === "logical") return value === false || value === null || value === undefined;
+  // Logical `false` is real content (e.g. unchecked flags); only nullish is blank.
+  if (type === "logical") return value === null || value === undefined;
   return String(value ?? "").trim() === "";
 }
 
