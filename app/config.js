@@ -1,8 +1,8 @@
 /** Fork-sensitive defaults — edit when creating your app from this framework. */
 export const APP_CONFIG = {
   /** Public site URL (GitHub Pages / custom domain). Used to hide this app in “also see”. */
-  appUrl: "https://fifak.github.io/pbi-embedder/",
-  repoUrl: "https://github.com/fifak/pbi-embedder",
+  appUrl: "https://filcuk.github.io/pbi-embedder/",
+  repoUrl: "https://github.com/filcuk/pbi-embedder",
   themeStorageKey: "pbi-embedder-theme",
   themeChangeEvent: "pbi-embedder-theme-change",
   /**

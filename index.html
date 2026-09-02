@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Convert tabular data, JSON, and M-encoded JSON for Power Query."
+      content="Tools for embedding docments in M and DAX whilst bypassing data limits or file type constraints."
     />
     <title>Power BI Embedder</title>
     <link rel="icon" href="app/res/app.svg" type="image/svg+xml" data-brand-icon />
@@ -35,7 +35,14 @@
         <h1>Power BI Embedder</h1>
       </div>
       <p class="tagline">
-        Convert tabular data, JSON, and M-encoded JSON for Power Query.
+        When the data won’t fit — we’d better <em>embed</em> it.
+        <button
+          type="button"
+          id="about-open-btn"
+          class="btn btn-link tagline-link"
+        >
+          What?
+        </button>
       </p>
     </header>
 
@@ -469,6 +476,55 @@
         </div>
       </section>
     </main>
+
+    <div
+      id="about-dialog"
+      class="modal hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="about-dialog-title"
+      hidden
+    >
+      <div class="modal-backdrop" data-dialog-close></div>
+      <div class="modal-panel">
+        <div class="modal-header">
+          <h2 id="about-dialog-title">What does this do?</h2>
+          <button
+            type="button"
+            class="modal-close"
+            aria-label="Close"
+            data-dialog-close
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>
+            <strong>Power BI Embedder</strong> allows embedding documents in Power Query M or DAX, bypassing
+            size and file type limits.
+          </p>
+          <p>
+            You can use it to <em>embed huge static mapping tables, or SVG images</em>. 
+            The tool ensures the input is valid, escaped, and will be parsed correctly. 
+            It also provides various options to customise the generated code. 
+            <br />
+            You can bring previously converted code to <em>parse back into standard formats</em>.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <div class="modal-footer-actions">
+            <button
+              type="button"
+              class="btn btn-primary"
+              data-dialog-close
+              data-dialog-default
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div
       id="load-sample-dialog"

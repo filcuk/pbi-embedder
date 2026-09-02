@@ -6,6 +6,7 @@ import { initTabularInput, formatClipboardTable } from "./components/tabular-inp
 import { initCodeBlock } from "./components/code-block.js";
 import { initExpandableSurfaces } from "./components/expandable-surface.js";
 import { initDialog } from "./components/dialog.js";
+import { initAboutDialog } from "./components/about-dialog.js";
 import { initIcons, createIcon } from "./utils/icons.js";
 import { copyText } from "./utils/clipboard.js";
 import {
@@ -31,6 +32,11 @@ import {
 initShell({
   headingLinks: false,
   pageNav: false,
+});
+
+initAboutDialog({
+  dialogEl: document.getElementById("about-dialog"),
+  openTriggers: "#about-open-btn",
 });
 
 const persisted = loadPersistedTooling();
