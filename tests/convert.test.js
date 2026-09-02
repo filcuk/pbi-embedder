@@ -288,3 +288,115 @@ test("nested objects become JSON text cells", () => {
   assert.equal(table.columns[1].type, "text");
   assert.equal(table.rows[0].cells[table.columns[1].id], '{"color":"red"}');
 });
+
+test("convert rejects same input and output format", () => {
+  const result = convert({
+    inputFormat: "json",
+    outputFormat: "json",
+    value: "[]",
+  });
+  assert.equal(result.ok, false);
+  if (result.ok) return;
+  assert.match(result.error, /must be different/);
+});
+
+test("tableToRecords returns empty for null table", () => {
+  assert.deepEqual(tableToRecords(null), []);
+  assert.deepEqual(tableToRecords(undefined), []);
+});
+
+test("recordsToTable returns empty snapshot for empty array", () => {
+  assert.deepEqual(recordsToTable([]), { columns: [], rows: [] });
+});
+
+test("tableToRecords fills missing cells with null", () => {
+  const table = {
+    columns: [{ id: "a", label: "A", type: "text" }],
+    rows: [{ id: "r1", cells: {} }],
+  };
+  assert.deepEqual(tableToRecords(table), [{ A: null }]);
+});
+
+test("recordsToTable unions keys across sparse records", () => {
+  const table = recordsToTable([{ a: 1 }, { b: 2 }]);
+  assert.deepEqual(
+    table.columns.map((column) => column.label),
+    ["a", "b"]
+  );
+  const records = tableToRecords(table);
+  assert.equal(records[0].a, 1);
+  assert.equal(records[0].b, null);
+  assert.equal(records[1].a, null);
+  assert.equal(records[1].b, 2);
+});
+
+test("tableToRecords throws on duplicate column labels", () => {
+  const table = {
+    columns: [
+      { id: "c1", label: "A", type: "text" },
+      { id: "c2", label: "A", type: "text" },
+    ],
+    rows: [{ id: "r1", cells: { c1: "x", c2: "y" } }],
+  };
+  assert.throws(() => tableToRecords(table), /Duplicate column label: "A"/);
+});
+
+test("convert surfaces duplicate column labels without throwing", () => {
+  const result = convert({
+    inputFormat: "tabular",
+    outputFormat: "json",
+    value: {
+      columns: [
+        { id: "c1", label: "A", type: "text" },
+        { id: "c2", label: "A", type: "text" },
+      ],
+      rows: [{ id: "r1", cells: { c1: "x", c2: "y" } }],
+    },
+  });
+  assert.equal(result.ok, false);
+  if (result.ok) return;
+  assert.match(result.error, /Duplicate column label/);
+});
+
+test("encodeMJsonText rejects apostrophes in single-quote mode", () => {
+  assert.throws(
+    () =>
+      encodeMJsonText([{ Name: "O'Brien" }], {
+        quoteStyle: "single",
+        compact: true,
+      }),
+    /apostrophe/
+  );
+});
+
+test("convert surfaces single-quote apostrophe failure", () => {
+  const result = convert({
+    inputFormat: "json",
+    outputFormat: "m-json",
+    value: JSON.stringify([{ Name: "O'Brien" }]),
+    quoteStyle: "single",
+    compact: true,
+  });
+  assert.equal(result.ok, false);
+  if (result.ok) return;
+  assert.match(result.error, /apostrophe/);
+});
+
+test("parseMJsonText rejects empty and invalid input", () => {
+  assert.throws(() => parseMJsonText("  "), /empty/);
+  assert.throws(() => parseMJsonText('"not{json"'), /Invalid M-JSON/);
+});
+
+test("encodeJsonText compact omits trailing newline", () => {
+  assert.equal(encodeJsonText([{ A: 1 }], { pretty: false }), '[{"A":1}]');
+});
+
+test("encodeMJsonText escaped includeParsing has no Text.Replace", () => {
+  const encoded = encodeMJsonText([{ A: 1 }], {
+    quoteStyle: "escaped",
+    compact: true,
+    includeParsing: true,
+  });
+  assert.match(encoded, /Json\.Document\(JSON\)/);
+  assert.doesNotMatch(encoded, /Text\.Replace/);
+});

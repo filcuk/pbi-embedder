@@ -25,6 +25,8 @@ const FORK_TESTS = [
   "tests/heading-link.test.js",
   "tests/icons.test.js",
   "tests/menu-grid.test.js",
+  "tests/persist.test.js",
+  "tests/selection.test.js",
   "tests/styles-entry.test.js",
   "tests/table-sort.test.js",
   "tests/tabular-input.test.js",
