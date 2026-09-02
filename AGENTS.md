@@ -1,6 +1,8 @@
 # AGENTS.md
 
-Rules for AI agents working in the SMA1 Framework repository and its app forks.
+Rules for AI agents working in **Power BI Embedder** (an SMA1 Framework fork).
+
+App-specific logic lives under [`app/tools/`](app/tools/) (`convert.js`, `selection.js`, `persist.js`, `output-table.js`) and [`app/main.js`](app/main.js). The catalogue is trimmed via [`framework.lock.json`](framework.lock.json); use **`restore-component`** to add features back. Fork tests run through [`scripts/test-app.mjs`](scripts/test-app.mjs).
 
 ## Framework ownership boundary
 
