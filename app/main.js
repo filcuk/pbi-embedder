@@ -40,6 +40,7 @@ const selection = createSelection({
 });
 
 const headingEl = document.getElementById("conversion-heading");
+const leadEl = document.getElementById("conversion-lead");
 const optionsSection = document.getElementById("options-section");
 const convertQuotesToggle = document.getElementById("convert-quotes-toggle");
 const outputFormatControl = document.getElementById("output-format-control");
@@ -127,6 +128,9 @@ function syncChrome() {
 
   if (headingEl) {
     headingEl.textContent = selection.heading();
+  }
+  if (leadEl) {
+    leadEl.textContent = selection.lead();
   }
 
   const showOptions = selection.showOptions();

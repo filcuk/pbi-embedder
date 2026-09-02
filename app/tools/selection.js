@@ -70,6 +70,26 @@ export function formatConversionHeading({ family, input, output }) {
 }
 
 /**
+ * Short lead describing the active conversion (no “What?” control).
+ * @param {Pick<ToolSelection, "input" | "output">} selection
+ */
+export function formatConversionLead({ input, output }) {
+  /** @type {Readonly<Record<Format, string>>} */
+  const from = {
+    tabular: "tabular data",
+    json: "JSON records",
+    "m-json": "M-encoded JSON",
+  };
+  /** @type {Readonly<Record<Format, string>>} */
+  const to = {
+    tabular: "a table",
+    json: "plain JSON",
+    "m-json": "M-encoded JSON for Power Query",
+  };
+  return `Convert ${from[input] ?? input} to ${to[output] ?? output}.`;
+}
+
+/**
  * @param {Partial<ToolSelection>} [initial]
  * @returns {{
  *   get: () => ToolSelection,
@@ -81,6 +101,7 @@ export function formatConversionHeading({ family, input, output }) {
  *   setIncludeParsing: (includeParsing: boolean) => ToolSelection,
  *   setConvertQuotes: (convertQuotes: boolean) => ToolSelection,
  *   heading: () => string,
+ *   lead: () => string,
  *   showOptions: () => boolean,
  *   showConvertQuotes: () => boolean,
  * }}
@@ -153,6 +174,9 @@ export function createSelection(initial = {}) {
     },
     heading() {
       return formatConversionHeading(snapshot());
+    },
+    lead() {
+      return formatConversionLead(snapshot());
     },
     showOptions() {
       return output === "m-json";
