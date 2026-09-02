@@ -3,6 +3,14 @@
  * Add app-specific rules here (or pull in additional local sheets).
  */
 
+:root {
+  --accent: #746048;
+}
+
+:root[data-theme="dark"] {
+  --accent: #edddb5;
+}
+
 .tooling-bar {
   align-items: center;
   gap: 0.75rem 1rem;
