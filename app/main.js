@@ -1,5 +1,4 @@
 import { initShell } from "./shell/shell.js";
-import { initPageNavPanel } from "./shell/page-nav.js";
 import { setHidden } from "./utils/dom.js";
 import { initSegmentedControl } from "./components/segmented-control.js";
 import { initTabularInput } from "./components/tabular-input.js";
@@ -15,7 +14,10 @@ import {
   parseInput,
 } from "./tools/convert.js";
 
-initShell();
+initShell({
+  headingLinks: false,
+  pageNav: false,
+});
 
 const selection = createSelection({
   family: "m",
@@ -29,7 +31,6 @@ const quoteStyleRow = document.getElementById("quote-style-row");
 const outputFormatControl = document.getElementById("output-format-control");
 const errorBanner = document.querySelector("[data-convert-error]");
 const errorMessageEl = document.getElementById("convert-error-message");
-const pageNav = initPageNavPanel("#page-nav");
 
 const inputSurfaces = {
   tabular: document.getElementById("input-tabular"),
@@ -114,7 +115,6 @@ function syncChrome() {
   syncOutputAvailability(state.input);
   syncSurfaceVisibility(inputSurfaces, state.input);
   syncSurfaceVisibility(outputSurfaces, state.output);
-  pageNav?.rebuild?.();
 }
 
 /**
