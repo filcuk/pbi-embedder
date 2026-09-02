@@ -5,6 +5,7 @@ import { initToggle } from "./components/toggle.js";
 import { initTabularInput } from "./components/tabular-input.js";
 import { initCodeBlock } from "./components/code-block.js";
 import { initExpandableSurfaces } from "./components/expandable-surface.js";
+import { initDialog } from "./components/dialog.js";
 import { initIcons } from "./utils/icons.js";
 import { showBanner, hideBanner } from "./components/banner.js";
 import { createSelection } from "./tools/selection.js";
@@ -13,6 +14,7 @@ import {
   encodeJsonText,
   encodeMJsonText,
   parseInput,
+  tableToRecords,
 } from "./tools/convert.js";
 import { renderOutputTable } from "./tools/output-table.js";
 
@@ -59,6 +61,9 @@ const SAMPLE_ROWS = [
   { id: "r1", cells: { name: "Widget", qty: 12, active: true } },
   { id: "r2", cells: { name: "Gadget", qty: 3, active: false } },
 ];
+
+const SAMPLE_TABLE = { columns: SAMPLE_COLUMNS, rows: SAMPLE_ROWS };
+const SAMPLE_RECORDS = tableToRecords(SAMPLE_TABLE);
 
 /** @type {ReturnType<typeof initTabularInput> | null} */
 let inputTabularApi = null;
@@ -170,12 +175,11 @@ function writeInputValue(format, value) {
         value && typeof value === "object"
           ? value
           : { columns: [], rows: [] };
-      inputTabularApi?.setData(
-        table.columns.length || table.rows.length
-          ? table
-          : { columns: SAMPLE_COLUMNS, rows: [] },
-        { emitEvent: false }
-      );
+      if (table.columns.length || table.rows.length) {
+        inputTabularApi?.setData(table, { emitEvent: false });
+      } else {
+        inputTabularApi?.reset({ emitEvent: false });
+      }
       return;
     }
     const text = typeof value === "string" ? value : "";
@@ -187,6 +191,55 @@ function writeInputValue(format, value) {
   } finally {
     suppressConvert = false;
   }
+}
+
+/**
+ * @param {string | number | boolean | null | undefined} value
+ * @param {string} type
+ */
+function isBlankCell(value, type) {
+  if (type === "number") return value === null || value === undefined || value === "";
+  if (type === "logical") return value === false || value === null || value === undefined;
+  return String(value ?? "").trim() === "";
+}
+
+/**
+ * True when the active input has no user content to overwrite.
+ * @param {import("./tools/selection.js").Format} format
+ */
+function isInputBlank(format) {
+  if (format === "tabular") {
+    const data = inputTabularApi?.getData();
+    if (!data?.columns?.length) return true;
+    return data.rows.every((row) =>
+      data.columns.every((column) =>
+        isBlankCell(row.cells?.[column.id], column.type)
+      )
+    );
+  }
+  return String(readInputValue(format) ?? "").trim() === "";
+}
+
+/**
+ * Load the built-in sample into the current input format.
+ */
+function loadSampleIntoInput() {
+  const state = selection.get();
+  if (state.input === "tabular") {
+    writeInputValue("tabular", SAMPLE_TABLE);
+  } else if (state.input === "json") {
+    writeInputValue("json", encodeJsonText(SAMPLE_RECORDS));
+  } else {
+    writeInputValue(
+      "m-json",
+      encodeMJsonText(SAMPLE_RECORDS, {
+        quoteStyle: state.quoteStyle,
+        compact: state.compact,
+        includeParsing: state.includeParsing,
+      })
+    );
+  }
+  scheduleConvert();
 }
 
 /**
@@ -215,14 +268,7 @@ function migrateInputFormat(previousFormat, nextFormat, options) {
       })
     );
   } catch {
-    if (nextFormat === "tabular") {
-      writeInputValue("tabular", {
-        columns: SAMPLE_COLUMNS,
-        rows: SAMPLE_ROWS,
-      });
-    } else {
-      writeInputValue(nextFormat, "");
-    }
+    writeInputValue(nextFormat, nextFormat === "tabular" ? { columns: [], rows: [] } : "");
   }
 }
 
@@ -370,11 +416,28 @@ initToggle(document.getElementById("include-parsing-toggle"), {
 });
 
 inputTabularApi = initTabularInput(inputSurfaces.tabular, {
-  columns: SAMPLE_COLUMNS,
-  rows: SAMPLE_ROWS,
   onChange: () => {
     scheduleConvert();
   },
+});
+inputTabularApi?.reset({ emitEvent: false });
+
+const loadSampleDialog = initDialog({
+  dialogEl: document.getElementById("load-sample-dialog"),
+});
+
+document.getElementById("load-sample-btn")?.addEventListener("click", () => {
+  const format = selection.get().input;
+  if (isInputBlank(format)) {
+    loadSampleIntoInput();
+    return;
+  }
+  loadSampleDialog?.openDialog();
+});
+
+document.getElementById("load-sample-confirm")?.addEventListener("click", () => {
+  loadSampleDialog?.closeDialog();
+  loadSampleIntoInput();
 });
 
 inputJsonApi = initCodeBlock(inputSurfaces.json);

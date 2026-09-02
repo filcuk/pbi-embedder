@@ -12,6 +12,10 @@
   flex: 0 0 auto;
 }
 
+.tooling-bar #load-sample-btn {
+  margin-left: auto;
+}
+
 .content-section .code-block-body {
   max-height: 28rem;
   overflow: hidden;

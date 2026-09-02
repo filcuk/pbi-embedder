@@ -173,6 +173,10 @@
               value="m-json"
             />
           </div>
+
+          <button type="button" class="btn btn-slim" id="load-sample-btn">
+            Load sample
+          </button>
         </div>
       </section>
 
@@ -409,6 +413,52 @@
         </div>
       </section>
     </main>
+
+    <div
+      id="load-sample-dialog"
+      class="modal hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="load-sample-dialog-title"
+      hidden
+    >
+      <div class="modal-backdrop" data-dialog-close></div>
+      <div class="modal-panel">
+        <div class="modal-header">
+          <h2 id="load-sample-dialog-title">Replace current input?</h2>
+          <button
+            type="button"
+            class="modal-close"
+            aria-label="Close"
+            data-dialog-close
+          >
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>Loading the sample will overwrite your current input.</p>
+        </div>
+        <div class="modal-footer">
+          <div class="modal-footer-actions">
+            <button
+              type="button"
+              class="btn"
+              data-dialog-close
+              data-dialog-default
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              id="load-sample-confirm"
+            >
+              Load sample
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <script defer src="app/vendor/prism/prism.min.js"></script>
     <script defer src="app/vendor/prism/prism-json.min.js"></script>
