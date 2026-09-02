@@ -1,0 +1,17 @@
+---
+description: Keep app agents from modifying framework-owned files or applying unrequested local framework workarounds
+alwaysApply: true
+---
+
+# Framework ownership boundary
+
+When working in an app fork, treat all framework-owned files as **read-only**. This includes:
+
+- Every path listed in `framework-manifest.json` under `files`
+- Generated paths listed under `framework-manifest.json` → `derived` (for example, `app/css/framework.css`)
+- `framework-manifest.json` itself and the selected framework skills/rules under `.cursor/`
+- The `FRAMEWORK_VERSION` field in `app/version.js`
+
+Do **not** modify, patch, copy, or work around a framework-owned file to complete an app task. If the task exposes a framework bug, stop and report it with the affected path, observed behaviour, and relevant evidence. The fix belongs upstream and should be consumed through the framework sync/migration workflow.
+
+Only add a local workaround in an app-owned or fork-local file when the user explicitly requests that workaround. Do not apply one silently. Framework-maintenance tasks explicitly targeting the framework itself are the exception.

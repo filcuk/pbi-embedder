@@ -1,0 +1,924 @@
+﻿/* Fields */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-width: 24rem;
+  min-width: 0;
+}
+
+.field-label {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.input,
+.textarea {
+  font: inherit;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--input-bg);
+  color: var(--text);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input {
+  min-height: var(--control-height);
+  padding: 0 0.75rem;
+}
+
+.textarea {
+  min-height: 5rem;
+  padding: 0.5rem 0.75rem;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--muted);
+  opacity: 0.85;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: var(--accent);
+}
+
+.input:disabled,
+.textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.combobox {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-width: 24rem;
+}
+
+.combobox-control {
+  position: relative;
+}
+
+.combobox-input[aria-invalid="true"] {
+  border-color: var(--banner-error-border);
+  outline-color: var(--banner-error-border);
+}
+
+.combobox-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  /* Match .dropdown-menu — above sticky chrome (20–41). */
+  z-index: 60;
+  width: 100%;
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: 0 4px 12px rgba(31, 35, 40, 0.12);
+}
+
+:root[data-theme="dark"] .combobox-list {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+/* Multi-column layout when a combobox has many options (`data-combobox-grid*`). */
+.combobox-list.combobox-list--grid {
+  --dropdown-menu-grid-cols: 2;
+  display: grid;
+  grid-template-columns: repeat(var(--dropdown-menu-grid-cols, 2), minmax(0, 1fr));
+  gap: 0;
+  width: max-content;
+  min-width: 100%;
+  max-width: min(100vw - 3rem, 28rem);
+}
+
+.combobox-list.combobox-list--grid[data-grid-cols="1"] {
+  --dropdown-menu-grid-cols: 1;
+}
+.combobox-list.combobox-list--grid[data-grid-cols="2"] {
+  --dropdown-menu-grid-cols: 2;
+}
+.combobox-list.combobox-list--grid[data-grid-cols="3"] {
+  --dropdown-menu-grid-cols: 3;
+}
+.combobox-list.combobox-list--grid[data-grid-cols="4"] {
+  --dropdown-menu-grid-cols: 4;
+}
+.combobox-list.combobox-list--grid[data-grid-cols="5"] {
+  --dropdown-menu-grid-cols: 5;
+}
+.combobox-list.combobox-list--grid[data-grid-cols="6"] {
+  --dropdown-menu-grid-cols: 6;
+}
+
+.combobox-list.combobox-list--grid > li:has(.combobox-empty) {
+  grid-column: 1 / -1;
+}
+
+.combobox-list.combobox-list--grid .combobox-option {
+  white-space: normal;
+}
+
+.combobox-option {
+  display: block;
+  width: 100%;
+  padding: calc(0.5rem - 1px) calc(1rem - 1px);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: border-color var(--control-hover-ms) ease-out, background var(--control-hover-ms) ease-out,
+    color var(--control-hover-ms) ease-out;
+}
+
+.combobox-option:hover,
+.combobox-option:focus-visible,
+.combobox-option.is-active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) var(--control-hover-mix), var(--surface));
+  color: var(--text);
+  outline: none;
+  transition-duration: 0s;
+}
+
+.combobox-option:active:not(:disabled),
+.combobox-option.is-pressed:not(:disabled) {
+  border-color: var(--accent);
+  background: color-mix(
+    in srgb,
+    var(--accent) var(--control-selected-mix),
+    var(--surface)
+  );
+  color: var(--text);
+  outline: none;
+  transition-duration: 0s;
+}
+
+.combobox-option.is-selected {
+  background: color-mix(in srgb, var(--accent) var(--control-selected-mix), var(--surface));
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.combobox-option.is-selected:hover,
+.combobox-option.is-selected:focus-visible,
+.combobox-option.is-selected.is-active {
+  background: color-mix(in srgb, var(--accent) var(--control-selected-mix), var(--surface));
+  border-color: var(--accent);
+  color: var(--text);
+  transition-duration: 0s;
+}
+
+.combobox-option.is-selected:active:not(:disabled),
+.combobox-option.is-selected.is-pressed:not(:disabled) {
+  background: color-mix(
+    in srgb,
+    var(--accent) var(--control-press-mix),
+    var(--surface)
+  );
+  border-color: var(--accent);
+  color: var(--text);
+  transition-duration: 0s;
+}
+
+/* Contiguous selected runs share one outer border (skip hidden filtered siblings).
+   Single-column lists only — multi-column grids use `syncListGridSelectionJoins`. */
+.combobox-list:not(.combobox-list--grid) li:not([hidden]):has(> .combobox-option.is-selected):has(
+    + li:not([hidden]) > .combobox-option.is-selected
+  )
+  > .combobox-option.is-selected {
+  border-bottom-width: 0;
+  padding-bottom: 0.5rem;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.combobox-list:not(.combobox-list--grid) li:not([hidden]):has(> .combobox-option.is-selected)
+  + li:not([hidden])
+  > .combobox-option.is-selected {
+  border-top-width: 0;
+  padding-top: 0.5rem;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.combobox-empty {
+  padding: 0.5rem 1rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+/* Multi-select: badge wraps the control; input shows a comma-separated summary */
+.combobox--multi .badge-host {
+  display: block;
+  width: 100%;
+  max-width: inherit;
+}
+
+.field.date-picker {
+  width: fit-content;
+  max-width: 100%;
+  align-self: start;
+}
+
+/* Date / time / duration — shared field chrome (component-specific rules follow). */
+
+.date-picker,
+.time-picker,
+.duration-input {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.time-picker,
+.duration-input {
+  justify-self: start;
+}
+
+.date-picker-control,
+.time-picker-control {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.date-picker-trigger,
+.time-picker-trigger,
+.duration-input-trigger {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 0 6px 6px 0;
+}
+
+.date-picker-trigger:hover,
+.time-picker-trigger:hover,
+.duration-input-trigger:hover {
+  color: var(--accent);
+}
+
+.date-picker-trigger:focus-visible,
+.time-picker-trigger:focus-visible,
+.duration-input-trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.date-picker-icon,
+.time-picker-icon,
+.duration-input-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.date-picker-popup,
+.time-picker-popup {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  /* Match .dropdown-menu — above sticky chrome (20–41). */
+  z-index: 60;
+  --panel-padding: 0.75rem;
+  max-width: calc(100vw - 2 * var(--page-padding-x));
+  padding: var(--panel-padding);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgba(31, 35, 40, 0.12);
+}
+
+:root[data-theme="dark"] .date-picker-popup,
+:root[data-theme="dark"] .time-picker-popup {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.date-picker-actions,
+.time-picker-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  margin-inline: calc(-1 * var(--panel-padding, 0.75rem));
+  padding: 0.75rem var(--panel-padding, 0.75rem) 0;
+  border-top: 1px solid var(--border);
+}
+
+.date-picker-quick-btn,
+.time-picker-quick-btn {
+  flex: 1;
+}
+
+.time-picker--disabled .time-picker-trigger,
+.duration-input--disabled .duration-input-trigger {
+  cursor: not-allowed;
+}
+
+.date-picker-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.date-picker-row .date-picker-control {
+  flex: 0 1 auto;
+}
+
+.date-picker-row .date-picker-time {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  min-height: var(--control-height);
+  /* hh:mm — 4 digits + a colon (≈0.45ch) — plus field padding and borders. */
+  width: calc(4.45ch + 1.5rem + 2px);
+  font-variant-numeric: tabular-nums;
+}
+
+.date-picker--with-time[data-date-picker-seconds] .date-picker-time {
+  width: calc(6.9ch + 1.5rem + 2px);
+}
+
+.date-picker-input {
+  width: calc(15ch + 1rem);
+  max-width: 100%;
+  padding-right: 2.5rem;
+  cursor: text;
+}
+
+.date-picker-input[aria-invalid="true"],
+.time-picker-input[aria-invalid="true"] {
+  border-color: var(--banner-error-border);
+  outline-color: var(--banner-error-border);
+}
+
+.date-picker-time {
+  box-sizing: border-box;
+  min-height: var(--control-height);
+  width: auto;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] .date-picker-time {
+  color-scheme: dark;
+}
+
+.time-picker > .date-picker-time {
+  align-self: flex-start;
+}
+
+.time-picker-input {
+  /* hh:mm — 4 digits + a colon (≈0.45ch) — plus padding, icon slot, borders. */
+  width: calc(4.45ch + 0.75rem + 2.5rem + 2px);
+  max-width: 100%;
+  padding-right: 2.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.time-picker[data-time-picker-seconds] .time-picker-input {
+  width: calc(6.9ch + 0.75rem + 2.5rem + 2px);
+}
+
+.time-picker-popup {
+  width: fit-content;
+}
+
+.time-picker-panel {
+  /* Column count comes from the panel (2, or 3 with seconds) */
+  --time-picker-columns: 2;
+  --time-picker-column-width: 3.5rem;
+  --time-picker-column-gap: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: calc(
+    var(--time-picker-columns) * var(--time-picker-column-width) +
+      (var(--time-picker-columns) - 1) * var(--time-picker-column-gap)
+  );
+  min-width: 0;
+}
+
+.time-picker-fields {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: var(--time-picker-column-gap);
+}
+
+.time-picker-field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.time-picker-nudge.btn-icon {
+  width: 100%;
+  min-width: 0;
+  height: var(--control-height-slim);
+  min-height: var(--control-height-slim);
+  padding: 0;
+  color: var(--muted);
+}
+
+.time-picker-nudge:hover:not(:disabled) {
+  color: var(--accent);
+}
+
+.time-picker-nudge-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.time-picker-segment {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-height);
+  padding: 0 0.25rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.time-picker-segment[aria-invalid="true"] {
+  border-color: var(--banner-error-border);
+  outline-color: var(--banner-error-border);
+}
+
+.time-picker-panel--disabled,
+.time-picker--disabled {
+  opacity: 0.5;
+}
+
+.duration-input-control {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  align-self: flex-start;
+  box-sizing: border-box;
+  min-height: var(--control-height);
+  width: auto;
+  max-width: 100%;
+  padding: 0 2.5rem 0 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--input-bg);
+  color: var(--text);
+  font: inherit;
+  /* Match native `type="time"` — arrow, not I-beam */
+  cursor: default;
+}
+
+.duration-input-control:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: var(--accent);
+}
+
+.duration-input-control .input.duration-input-hours,
+.duration-input-control .input.duration-input-minutes,
+.duration-input-control .input.duration-input-seconds,
+.duration-input-hours,
+.duration-input-minutes,
+.duration-input-seconds {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: 2ch;
+  min-width: 2ch;
+  min-height: 0;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  outline: none;
+  cursor: default;
+}
+
+.duration-input-control .input.duration-input-hours,
+.duration-input-hours {
+  width: 2.5ch;
+  min-width: 2.5ch;
+  text-align: right;
+}
+
+.duration-input-hours[aria-invalid="true"],
+.duration-input-minutes[aria-invalid="true"],
+.duration-input-seconds[aria-invalid="true"] {
+  color: var(--banner-error-border);
+}
+
+.duration-input-sep {
+  flex: 0 0 auto;
+  padding: 0;
+  color: var(--muted);
+  line-height: 1;
+  user-select: none;
+  cursor: default;
+}
+
+.duration-input--disabled {
+  opacity: 0.5;
+}
+
+.duration-input--disabled .duration-input-control {
+  cursor: not-allowed;
+}
+
+.date-picker-popup {
+  width: 18rem;
+}
+
+/* Full-height time divider: drop popup padding and pad the columns instead. */
+.date-picker--with-time .date-picker-popup {
+  width: max-content;
+  padding: 0;
+}
+
+.date-picker-shell {
+  display: grid;
+  grid-template-columns: 18rem 1px auto;
+  column-gap: 0;
+  align-items: stretch;
+}
+
+.date-picker-calendar {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 18rem;
+  padding: var(--panel-padding, 0.75rem);
+}
+
+.date-picker-time-divider {
+  width: 1px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  align-self: stretch;
+  background-color: var(--border);
+}
+
+.date-picker-time-panel {
+  box-sizing: border-box;
+  display: flex;
+  align-self: stretch;
+  padding: var(--panel-padding, 0.75rem);
+}
+
+.date-picker-time-panel > .time-picker-panel {
+  flex: 0 0 auto;
+}
+
+/* Single action bar spanning both columns. */
+.date-picker--with-time .date-picker-popup > .date-picker-actions {
+  margin-top: 0;
+  margin-inline: 0;
+  padding: 0.75rem var(--panel-padding, 0.75rem);
+}
+
+.date-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.date-picker-caption,
+.date-picker-month {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.date-picker-caption-range {
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.date-picker-caption-part {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.875rem;
+  line-height: 1.2;
+  cursor: pointer;
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+}
+
+.date-picker-caption-part:hover {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.date-picker-caption-part:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.date-picker-nav {
+  min-height: auto;
+  padding: 0.15rem 0.5rem;
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.date-picker-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.15rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.date-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.15rem;
+}
+
+.date-picker-grid.is-choice-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.date-picker-day,
+.date-picker-choice {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.date-picker-day {
+  aspect-ratio: 1;
+}
+
+.date-picker-choice {
+  min-height: 2.25rem;
+  padding: 0.35rem 0.25rem;
+}
+
+.date-picker-day:hover:not(:disabled):not(.is-selected),
+.date-picker-choice:hover:not(:disabled):not(.is-selected) {
+  background: color-mix(in srgb, var(--accent) var(--control-selected-mix), transparent);
+}
+
+.date-picker-day.is-selected,
+.date-picker-choice.is-selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+
+.date-picker-day.is-today:not(.is-selected) {
+  border-color: var(--accent);
+}
+
+.date-picker-day.is-outside {
+  color: var(--muted);
+}
+
+.date-picker-day:disabled,
+.date-picker-choice:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: var(--text);
+  font-size: inherit;
+  line-height: 1.4;
+}
+
+/* Custom paint mirrors the toggle thumb: inset `--surface` face on accent fill.
+   Face host is mounted by initIcons / ensureCheckboxFace (no glyph icons). */
+.checkbox-control {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+}
+
+.checkbox-input {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--input-bg);
+  color: var(--accent-fg);
+  cursor: pointer;
+  grid-area: 1 / 1;
+  transition: border-color var(--control-hover-ms) ease-out, background var(--control-hover-ms) ease-out;
+}
+
+.checkbox-face {
+  position: absolute;
+  /* Inset (not centred) so each edge is measured from the box and gaps stay even.
+     Whole pixels at 1x — a fractional inset cannot rasterize evenly there. */
+  inset: 2px;
+  border-radius: 2px;
+  background: transparent;
+  pointer-events: none;
+  transition: background var(--control-hover-ms) ease-out, border-radius var(--control-hover-ms) ease-out;
+}
+
+/* Where half pixels are real, tighten to the toggle's inset ratio (2px on a 22px track). */
+@media (min-resolution: 2dppx) {
+  .checkbox-face {
+    inset: 1.5px;
+  }
+}
+
+.checkbox-control:has(.checkbox-input:checked) .checkbox-face,
+.checkbox-control:has(.checkbox-input:indeterminate) .checkbox-face,
+.checkbox-control:has(.checkbox-input[aria-checked="mixed"]) .checkbox-face {
+  background: var(--surface);
+  border-radius: 2px;
+  transition-duration: 0s;
+}
+
+.checkbox-control:has(.checkbox-input:indeterminate) .checkbox-face,
+.checkbox-control:has(.checkbox-input[aria-checked="mixed"]) .checkbox-face {
+  border-radius: 999px;
+}
+
+.checkbox-input:checked,
+.checkbox-input:indeterminate,
+.checkbox-input[aria-checked="mixed"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  transition-duration: 0s;
+}
+
+.checkbox-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.checkbox-input:disabled {
+  cursor: not-allowed;
+}
+
+.checkbox:has(.checkbox-input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: var(--text);
+  font-size: inherit;
+  line-height: 1.4;
+}
+
+.radio-input {
+  -webkit-appearance: none;
+  appearance: none;
+  display: grid;
+  place-content: center;
+  box-sizing: border-box;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--input-bg);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color var(--control-hover-ms) ease-out, background var(--control-hover-ms) ease-out;
+}
+
+.radio-input::before {
+  content: "";
+  /* Same 2px outer-to-face gap as `.checkbox-face` */
+  width: calc(1rem - 4px);
+  height: calc(1rem - 4px);
+  border-radius: 50%;
+  background: var(--surface);
+  transform: scale(0);
+  transition: transform var(--control-hover-ms) ease-out;
+}
+
+.radio-input:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+  transition-duration: 0s;
+}
+
+/* `none` rather than `scale(1)`: an untransformed resting face rasterizes on whole
+   device pixels, so the dot cannot land half a pixel off centre (same reason
+   `.checkbox-face` is inset rather than centred). */
+.radio-input:checked::before {
+  transform: none;
+  transition-duration: 0s;
+}
+
+.radio-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.radio-input:disabled {
+  cursor: not-allowed;
+}
+
+.radio:has(.radio-input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+@media (forced-colors: active) {
+  .checkbox-input,
+  .radio-input {
+    appearance: auto;
+  }
+
+  .checkbox-face,
+  .radio-input::before {
+    display: none;
+  }
+}
+

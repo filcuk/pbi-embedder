@@ -1,0 +1,482 @@
+/* Tabular input — editable typed grid */
+
+.tabular-input {
+  --tabular-input-gap: 0.35rem;
+  --tabular-input-cell-gap: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Centered canvas breakout when columns exceed the page body width. */
+.tabular-input.tabular-input--breakout {
+  width: min(
+    var(--tabular-breakout-width),
+    calc(100vw - 2 * var(--page-padding-x))
+  );
+  max-width: calc(100vw - 2 * var(--page-padding-x));
+  margin-left: calc(
+    (
+        100% -
+          min(
+            var(--tabular-breakout-width),
+            calc(100vw - 2 * var(--page-padding-x))
+          )
+      ) /
+      2
+  );
+}
+
+.tabular-input-footer-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tabular-input-breakout-toggle,
+.tabular-input-copy,
+.tabular-input-paste,
+.tabular-input-paste-headers {
+  gap: 0.35rem;
+  height: calc(var(--control-height) - 0.25rem);
+  min-height: calc(var(--control-height) - 0.25rem);
+  padding: 0 0.65rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+.tabular-input-breakout-toggle .btn-icon-svg,
+.tabular-input-copy .btn-icon-svg,
+.tabular-input-paste .btn-icon-svg,
+.tabular-input-paste-headers .btn-icon-svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.tabular-input-wrap {
+  max-width: 100%;
+}
+
+.tabular-input-table {
+  min-width: 100%;
+}
+
+.tabular-input-col-header {
+  vertical-align: middle;
+  min-width: 10rem;
+}
+
+.tabular-input-col-field {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  min-height: calc(var(--control-height) - 0.25rem);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  box-sizing: border-box;
+}
+
+.tabular-input-col-field.is-editing {
+  border-color: var(--border);
+  background: var(--input-bg);
+}
+
+.tabular-input-col-field.is-editing:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: var(--accent);
+}
+
+.tabular-input-col-label,
+.tabular-input-cell,
+.tabular-input-logical {
+  min-height: calc(var(--control-height) - 0.25rem);
+  padding: 0 0.5rem;
+  font-size: 0.875rem;
+}
+
+.tabular-input-col-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  border: none;
+  border-radius: 6px 0 0 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.tabular-input-col-field.is-editing .tabular-input-col-label {
+  cursor: text;
+}
+
+.tabular-input-col-label:focus {
+  outline: none;
+}
+
+.tabular-input-col-label:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tabular-input-col-field:not(.is-editing) .tabular-input-type-trigger {
+  opacity: 0.72;
+}
+
+.tabular-input-col-field:not(.is-editing):hover .tabular-input-type-trigger,
+.tabular-input-col-field:not(.is-editing):focus-within .tabular-input-type-trigger {
+  opacity: 1;
+}
+
+.tabular-input-type-slot {
+  position: relative;
+  flex: 0 0 2.25rem;
+  display: flex;
+  align-items: stretch;
+  align-self: stretch;
+}
+
+.tabular-input-type-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.05rem;
+  width: 100%;
+  margin: 0;
+  padding: 0 0.15rem;
+  border: none;
+  border-radius: 0 6px 6px 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.tabular-input-type-trigger:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.tabular-input-type-trigger:focus {
+  outline: none;
+}
+
+.tabular-input-type-trigger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tabular-input-type-current-icon,
+.tabular-input-type-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.tabular-input-type-menu {
+  right: 0;
+  left: auto;
+  min-width: 9rem;
+}
+
+.tabular-input-type-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tabular-input-type-item-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.tabular-input-remove-row,
+.tabular-input-add-row,
+.tabular-input-add-column,
+.tabular-input-reset {
+  width: calc(var(--control-height) - 0.25rem);
+  min-width: calc(var(--control-height) - 0.25rem);
+  height: calc(var(--control-height) - 0.25rem);
+  min-height: calc(var(--control-height) - 0.25rem);
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.tabular-input-cell,
+.tabular-input-logical {
+  font: inherit;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--input-bg);
+  color: var(--text);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tabular-input-cell:focus,
+.tabular-input-logical:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: var(--accent);
+}
+
+.tabular-input-logical {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  line-height: 0;
+  cursor: pointer;
+}
+
+.tabular-input-logical.toggle--disabled {
+  cursor: not-allowed;
+}
+
+.tabular-input-logical .toggle-btn {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  cursor: inherit;
+}
+
+.tabular-input-logical .toggle-btn:focus-visible .toggle-track {
+  outline: none;
+}
+
+.tabular-input-cell:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tabular-input-cell--number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.tabular-input-cell--number::-webkit-outer-spin-button,
+.tabular-input-cell--number::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.tabular-input-logical-cell {
+  vertical-align: middle;
+}
+
+.tabular-input-row-move-col {
+  width: 2.75rem;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.tabular-input-row-move {
+  display: inline-flex;
+  flex-direction: column;
+  width: calc(var(--control-height) - 0.25rem);
+  height: calc(var(--control-height) - 0.25rem);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  box-sizing: border-box;
+  background: var(--surface);
+  vertical-align: middle;
+}
+
+.tabular-input-row-move-btn {
+  flex: 1 1 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  line-height: 0;
+}
+
+.tabular-input-row-move-btn + .tabular-input-row-move-btn {
+  border-top: 1px solid var(--border);
+}
+
+.tabular-input-row-move-btn:hover:not(:disabled) {
+  background: var(--code-bg);
+  color: var(--accent);
+}
+
+.tabular-input-row-move-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+.tabular-input-row-move-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tabular-input-row-move-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  pointer-events: none;
+}
+
+.tabular-input-add-column-col,
+.tabular-input-trailing-col {
+  width: 2.75rem;
+  white-space: nowrap;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.tabular-input-add-row-cell {
+  vertical-align: middle;
+}
+
+.tabular-input .table tbody tr.tabular-input-add-row-tr:hover {
+  background: transparent;
+}
+
+.tabular-input .table tbody tr.tabular-input-add-row-tr:hover td {
+  box-shadow: none;
+}
+
+.tabular-input .table tbody tr.tabular-input-header-gap td {
+  height: calc(var(--tabular-input-cell-gap) / 2);
+  padding: 0;
+  line-height: 0;
+  vertical-align: top;
+}
+
+.tabular-input .table tbody tr.tabular-input-header-gap:hover,
+.tabular-input .table tbody tr.tabular-input-header-gap:hover td {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Half on each side so adjacent cells match the outer edge inset */
+.tabular-input .table th,
+.tabular-input .table td {
+  padding: calc(var(--tabular-input-cell-gap) / 2);
+  border-bottom: none;
+}
+
+.tabular-input .table thead th {
+  border-bottom: 1px solid var(--border);
+}
+
+/* Match outer left/right inset below the add-row footer. */
+.tabular-input .table tbody tr:last-child > * {
+  padding-bottom: var(--tabular-input-cell-gap);
+}
+
+.tabular-input .table tr > :first-child {
+  padding-left: var(--tabular-input-cell-gap);
+}
+
+.tabular-input .table tr > :last-child {
+  padding-right: var(--tabular-input-cell-gap);
+}
+
+.tabular-input-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.tabular-input--disabled .tabular-input-wrap {
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+/* Reset size picker popover (anchored to reset button) */
+
+.tabular-input-reset-slot {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.tabular-input-size-popover {
+  box-sizing: border-box;
+  min-width: max-content;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: 0 4px 12px rgba(31, 35, 40, 0.12);
+}
+
+:root[data-theme="dark"] .tabular-input-size-popover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.tabular-input-size-picker-label {
+  margin: 0 0 0.4rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.tabular-input-size-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: max-content;
+}
+
+.tabular-input-size-picker-row {
+  display: flex;
+  gap: 0.2rem;
+}
+
+.tabular-input-size-picker-cell {
+  box-sizing: border-box;
+  width: 1.15rem;
+  height: 1.15rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.tabular-input-size-picker-cell.is-selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 28%, var(--surface));
+}
+
+.tabular-input-size-picker-cell:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  z-index: 1;
+}

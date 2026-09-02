@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 2,
+  "frameworkVersion": "0.13.0",
+  "source": "filcuk/sma1-framework",
+  "components": ["*"],
+  "skills": ["*"]
+}

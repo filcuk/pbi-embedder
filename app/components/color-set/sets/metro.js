@@ -1,0 +1,25 @@
+/** @type {import('../registry.js').ColorSetDefinition} */
+export default {
+  id: "metro",
+  name: "Metro",
+  colors: [
+    { hex: "#99b433", name: "Light Green" },
+    { hex: "#00a300", name: "Green" },
+    { hex: "#1e7145", name: "Dark Green" },
+    { hex: "#ff0097", name: "Magenta" },
+    { hex: "#9f00a7", name: "Light Purple" },
+    { hex: "#7e3878", name: "Purple" },
+    { hex: "#603cba", name: "Dark Purple" },
+    { hex: "#1d1d1d", name: "Darken" },
+    { hex: "#00aba9", name: "Teal" },
+    { hex: "#eff4ff", name: "Light Blue" },
+    { hex: "#2d89ef", name: "Blue" },
+    { hex: "#2b5797", name: "Dark Blue" },
+    { hex: "#ffc40d", name: "Yellow" },
+    { hex: "#e3a21a", name: "Orange" },
+    { hex: "#da532c", name: "Dark Orange" },
+    { hex: "#ee1111", name: "Red" },
+    { hex: "#b91d47", name: "Dark Red" },
+    { hex: "#ffffff", name: "White" },
+  ],
+};

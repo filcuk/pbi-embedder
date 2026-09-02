@@ -1,0 +1,205 @@
+/* Data table */
+
+.table-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-width: 40rem;
+  min-width: 0;
+}
+
+.table-block--wide {
+  max-width: none;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.table-caption {
+  padding: 0.75rem 1rem;
+  caption-side: top;
+  text-align: left;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+.table th,
+.table td {
+  padding: 0.625rem 1rem;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border);
+}
+
+.table thead th {
+  font-weight: 600;
+  color: var(--text);
+  background: var(--table-header-bg);
+}
+
+.table tbody tr:last-child td,
+.table tbody tr:last-child th {
+  border-bottom: none;
+}
+
+.table--striped tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--code-bg) 55%, transparent);
+}
+
+.table tbody tr {
+  transition: background var(--control-hover-ms) ease-out;
+}
+
+.table tbody td {
+  transition: box-shadow var(--control-hover-ms) ease-out;
+}
+
+.table tbody tr:hover {
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  transition-duration: 0s;
+}
+
+/* One outer accent border per row — not a box around every cell. */
+.table tbody tr:hover td {
+  box-shadow: inset 0 1px 0 0 var(--accent), inset 0 -1px 0 0 var(--accent);
+  transition-duration: 0s;
+}
+
+.table tbody tr:hover td:first-child {
+  box-shadow: inset 1px 0 0 0 var(--accent), inset 0 1px 0 0 var(--accent),
+    inset 0 -1px 0 0 var(--accent);
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+}
+
+.table tbody tr:hover td:last-child {
+  box-shadow: inset -1px 0 0 0 var(--accent), inset 0 1px 0 0 var(--accent),
+    inset 0 -1px 0 0 var(--accent);
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+
+.table tbody tr:hover td:first-child:last-child {
+  box-shadow: inset 1px 0 0 0 var(--accent), inset -1px 0 0 0 var(--accent),
+    inset 0 1px 0 0 var(--accent), inset 0 -1px 0 0 var(--accent);
+}
+
+.table--striped tbody tr:nth-child(even):hover {
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+
+.table-block--selectable .table tbody tr {
+  cursor: pointer;
+}
+
+.table--compact th,
+.table--compact td {
+  padding: 0.4rem 0.75rem;
+}
+
+.table .table-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.table th.table-num .table-sort-button {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+}
+
+.table-select-col {
+  width: 2.75rem;
+  padding-right: 0.5rem;
+  padding-left: 0.75rem;
+  text-align: center;
+}
+
+.table-select-col .checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 0;
+  line-height: 0;
+}
+
+.table-select-col .checkbox-input,
+.table-select-col .checkbox-control {
+  flex-shrink: 0;
+}
+
+.table-sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  cursor: pointer;
+  text-align: inherit;
+}
+
+.table-sort-button:hover {
+  color: var(--accent);
+}
+
+.table-sort-button:active:not(:disabled) {
+  color: var(--accent-active);
+  transition-duration: 0s;
+}
+
+.table-sort-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.table-sort-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  color: var(--accent);
+}
+
+.table-sort-icon.hidden {
+  display: none;
+}
+
+.table-sort-button:not([aria-sort]) .table-sort-icon,
+.table-sort-button[aria-sort="none"] .table-sort-icon {
+  display: none;
+}
+
+.table-empty {
+  padding: 1rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.table-block--disabled .table-wrap {
+  opacity: 0.65;
+  pointer-events: none;
+}

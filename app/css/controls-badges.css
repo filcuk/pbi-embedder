@@ -1,0 +1,55 @@
+/* Badge — corner label on a control or text host */
+
+.badge-host {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 1.125rem;
+  height: 1.125rem;
+  padding: 0 0.35rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 0 0 2px var(--badge-ring, var(--bg));
+  transform: translate(40%, -40%);
+}
+
+/* Small — indicator dot only (no readout) */
+.badge--sm {
+  min-width: 0.5rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  padding: 0;
+  overflow: hidden;
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+}
+
+.badge.hidden {
+  display: none;
+}
+
+/* Avoid FOUC: empty normal badges paint a blank pill before JS hides them */
+.badge:not(.badge--sm):empty {
+  display: none;
+}

@@ -1,0 +1,2 @@
+# Auto detect text files and force LF in the working tree (hashes assume LF)
+* text=auto eol=lf

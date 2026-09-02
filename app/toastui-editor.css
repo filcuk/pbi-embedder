@@ -1,0 +1,5 @@
+/* Toast UI Editor — vendored base styles (load on pages that use the rich text editor) */
+
+@import url("vendor/toastui-editor/toastui-editor.min.css");
+@import url("vendor/toastui-editor/theme/toastui-editor-dark.min.css");
+@import url("vendor/toastui-editor-plugin-table-merged-cell/toastui-editor-plugin-table-merged-cell.min.css");

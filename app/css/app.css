@@ -1,0 +1,19 @@
+/**
+ * Fork-owned styles. Never overwritten by framework sync.
+ * Add app-specific rules here (or pull in additional local sheets).
+ */
+
+/* Demo-only code area limit; the reusable component has no height limit. */
+#demo-code-block .code-block-body {
+  max-height: 400px;
+  overflow: hidden;
+}
+
+#demo-code-block .code-block-body > .code-block-scroll {
+  max-height: 400px;
+}
+
+#demo-code-block.is-expanded .code-block-body,
+#demo-code-block.is-expanded .code-block-body > .code-block-scroll {
+  max-height: none;
+}
