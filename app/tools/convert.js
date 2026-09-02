@@ -49,6 +49,20 @@ export function flattenCellValue(value) {
 }
 
 /**
+ * @param {Column[]} columns
+ */
+function assertUniqueColumnLabels(columns) {
+  const seen = new Set();
+  for (const column of columns) {
+    const label = column.label;
+    if (seen.has(label)) {
+      throw new Error(`Duplicate column label: "${label}".`);
+    }
+    seen.add(label);
+  }
+}
+
+/**
  * Turn a tabular-input snapshot into an array of records (keys = column labels).
  * @param {TableData | null | undefined} table
  * @returns {RecordRow[]}
@@ -56,6 +70,7 @@ export function flattenCellValue(value) {
 export function tableToRecords(table) {
   const columns = table?.columns ?? [];
   const rows = table?.rows ?? [];
+  assertUniqueColumnLabels(columns);
   return rows.map((row) => {
     /** @type {RecordRow} */
     const record = {};
@@ -252,10 +267,18 @@ export function encodeMJsonText(
   const json = compact
     ? JSON.stringify(records)
     : JSON.stringify(records, null, 2);
-  const body =
-    quoteStyle === "single"
-      ? json.replace(/"/g, "'")
-      : escapeMTextBody(json);
+  let body;
+  if (quoteStyle === "single") {
+    // Naive " → ' swap cannot distinguish apostrophes from delimiters.
+    if (json.includes("'")) {
+      throw new Error(
+        "Single-quote M-JSON cannot include apostrophes ('). Use escaped quotes, or remove apostrophes from values and column labels."
+      );
+    }
+    body = json.replace(/"/g, "'");
+  } else {
+    body = escapeMTextBody(json);
+  }
   const literal = compact ? `"${body}"` : `"\n${body}\n"`;
   if (!includeParsing) return literal;
   return wrapMJsonWithParsing(literal, {
