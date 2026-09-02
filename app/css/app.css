@@ -2,3 +2,60 @@
  * Fork-owned styles. Never overwritten by framework sync.
  * Add app-specific rules here (or pull in additional local sheets).
  */
+
+.tooling-bar {
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.tooling-bar .section-title {
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.tooling-bar .segmented-control {
+  flex: 0 0 auto;
+}
+
+.conversion-title {
+  margin: 1.25rem 0 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.quote-style-row {
+  margin-bottom: 0.75rem;
+}
+
+.tool-io {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.tool-surface {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.tool-surface .panel-title {
+  margin: 0;
+}
+
+.tool-surface .code-block-body {
+  max-height: 28rem;
+  overflow: hidden;
+}
+
+.tool-surface .code-block-body > .code-block-scroll {
+  max-height: 28rem;
+}
+
+.tool-surface .code-block.is-expanded .code-block-body,
+.tool-surface .code-block.is-expanded .code-block-body > .code-block-scroll {
+  max-height: none;
+}

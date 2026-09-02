@@ -12,15 +12,11 @@
     <script>
       window.__MICROAPP__ = {
         themeStorageKey: "pbi-embedder-theme",
-        // App logo / favicon: pair (default) or single.
-        // Pair: appIconLight + appIconDark. Single: appIcon only, set light/dark to "".
-        // appIcon: "app/res/app.svg",
-        // appIconLight: "app/res/app-light.svg",
-        // appIconDark: "app/res/app-dark.svg",
       };
     </script>
     <script src="app/theme-init.js"></script>
     <link rel="stylesheet" href="app/styles.css" />
+    <link rel="stylesheet" href="app/prism.css" />
   </head>
   <body>
     <header>
@@ -48,15 +44,287 @@
     </header>
 
     <main id="main">
-      <section class="content-section">
-        <h2 id="getting-started" class="section-title">Getting started</h2>
-        <p>
-          Tooling UI lands in the next step. Edit <code>index.html</code> and
-          <code>app/main.js</code> to build the converter.
-        </p>
+      <section class="content-section" aria-labelledby="tooling">
+        <div class="panel-row tooling-bar">
+          <h2 id="tooling" class="section-title">Tooling</h2>
+
+          <div
+            class="segmented-control"
+            id="family-control"
+            data-segmented-control-default="m"
+          >
+            <div
+              class="segmented-control-list"
+              role="radiogroup"
+              aria-label="Language"
+            >
+              <button
+                type="button"
+                class="segmented-control-item"
+                role="radio"
+                aria-checked="true"
+                data-segmented-control-value="m"
+              >
+                M
+              </button>
+              <button
+                type="button"
+                class="segmented-control-item"
+                role="radio"
+                aria-checked="false"
+                data-segmented-control-value="dax"
+                disabled
+              >
+                DAX
+              </button>
+            </div>
+            <input
+              type="hidden"
+              class="segmented-control-value"
+              name="family"
+              value="m"
+            />
+          </div>
+
+          <div
+            class="segmented-control"
+            id="input-format-control"
+            data-segmented-control-default="tabular"
+          >
+            <div
+              class="segmented-control-list"
+              role="radiogroup"
+              aria-label="Input"
+            >
+              <button
+                type="button"
+                class="segmented-control-item"
+                role="radio"
+                aria-checked="true"
+                data-segmented-control-value="tabular"
+              >
+                Tabular
+              </button>
+              <button
+                type="button"
+                class="segmented-control-item"
+                role="radio"
+                aria-checked="false"
+                data-segmented-control-value="json"
+              >
+                JSON
+              </button>
+              <button
+                type="button"
+                class="segmented-control-item"
+                role="radio"
+                aria-checked="false"
+                data-segmented-control-value="m-json"
+              >
+                M-JSON
+              </button>
+            </div>
+            <input
+              type="hidden"
+              class="segmented-control-value"
+              name="input-format"
+              value="tabular"
+            />
+          </div>
+
+          <div
+            class="segmented-control"
+            id="output-format-control"
+            data-segmented-control-default="m-json"
+          >
+            <div
+              class="segmented-control-list"
+              role="radiogroup"
+              aria-label="Output"
+            >
+              <button
+                type="button"
+                class="segmented-control-item"
+                role="radio"
+                aria-checked="false"
+                data-segmented-control-value="tabular"
+                disabled
+              >
+                Tabular
+              </button>
+              <button
+                type="button"
+                class="segmented-control-item"
+                role="radio"
+                aria-checked="false"
+                data-segmented-control-value="json"
+              >
+                JSON
+              </button>
+              <button
+                type="button"
+                class="segmented-control-item"
+                role="radio"
+                aria-checked="true"
+                data-segmented-control-value="m-json"
+              >
+                M-JSON
+              </button>
+            </div>
+            <input
+              type="hidden"
+              class="segmented-control-value"
+              name="output-format"
+              value="m-json"
+            />
+          </div>
+        </div>
+
+        <h2 id="conversion-heading" class="conversion-title">
+          M: Tabular → M-JSON
+        </h2>
+
+        <div class="panel-row quote-style-row" id="quote-style-row">
+          <div
+            class="segmented-control segmented-control--slim"
+            id="quote-style-control"
+            data-segmented-control-default="single"
+          >
+            <div
+              class="segmented-control-list"
+              role="radiogroup"
+              aria-label="M-JSON quote style"
+            >
+              <button
+                type="button"
+                class="segmented-control-item"
+                role="radio"
+                aria-checked="true"
+                data-segmented-control-value="single"
+              >
+                Single quotes
+              </button>
+              <button
+                type="button"
+                class="segmented-control-item"
+                role="radio"
+                aria-checked="false"
+                data-segmented-control-value="escaped"
+              >
+                Escaped quotes
+              </button>
+            </div>
+            <input
+              type="hidden"
+              class="segmented-control-value"
+              name="quote-style"
+              value="single"
+            />
+          </div>
+        </div>
+
+        <div
+          class="banner banner-error hidden"
+          data-convert-error
+          role="status"
+          hidden
+        >
+          <span data-icon="error" data-icon-class="banner-icon" aria-hidden="true"></span>
+          <p class="banner-body" id="convert-error-message">
+            Could not convert the current input.
+          </p>
+        </div>
+
+        <div class="tool-io">
+          <section class="tool-surface" aria-label="Input">
+            <h3 class="panel-title">Input</h3>
+
+            <div
+              class="tabular-input"
+              id="input-tabular"
+              aria-label="Tabular input"
+            ></div>
+
+            <div
+              class="code-block hidden"
+              id="input-json"
+              data-code-mode="edit"
+              data-code-toolbar="top"
+              data-code-toolbar-actions="clear,copy,paste,maximize,line-numbers"
+              data-code-surface-actions="copy,maximize"
+              data-expandable-surface
+              data-expandable-surface-label="JSON input"
+              hidden
+            >
+              <div class="code-block-body" data-expandable-surface-trigger>
+                <pre class="line-numbers language-json"><code class="language-json"></code></pre>
+              </div>
+            </div>
+
+            <div
+              class="code-block hidden"
+              id="input-m-json"
+              data-code-mode="edit"
+              data-code-toolbar="top"
+              data-code-toolbar-actions="clear,copy,paste,maximize,line-numbers"
+              data-code-surface-actions="copy,maximize"
+              data-expandable-surface
+              data-expandable-surface-label="M-JSON input"
+              hidden
+            >
+              <div class="code-block-body" data-expandable-surface-trigger>
+                <pre class="line-numbers language-json"><code class="language-json"></code></pre>
+              </div>
+            </div>
+          </section>
+
+          <section class="tool-surface" aria-label="Output">
+            <h3 class="panel-title">Output</h3>
+
+            <div
+              class="tabular-input hidden"
+              id="output-tabular"
+              aria-label="Tabular output"
+              hidden
+            ></div>
+
+            <div
+              class="code-block hidden"
+              id="output-json"
+              data-code-mode="select"
+              data-code-toolbar="top"
+              data-code-toolbar-actions="copy,maximize,line-numbers"
+              data-code-surface-actions="copy,maximize"
+              data-expandable-surface
+              data-expandable-surface-label="JSON output"
+              hidden
+            >
+              <div class="code-block-body" data-expandable-surface-trigger>
+                <pre class="line-numbers language-json"><code class="language-json"></code></pre>
+              </div>
+            </div>
+
+            <div
+              class="code-block"
+              id="output-m-json"
+              data-code-mode="select"
+              data-code-toolbar="top"
+              data-code-toolbar-actions="copy,maximize,line-numbers"
+              data-code-surface-actions="copy,maximize"
+              data-expandable-surface
+              data-expandable-surface-label="M-JSON output"
+            >
+              <div class="code-block-body" data-expandable-surface-trigger>
+                <pre class="line-numbers language-json"><code class="language-json"></code></pre>
+              </div>
+            </div>
+          </section>
+        </div>
       </section>
     </main>
 
+    <script defer src="app/vendor/prism/prism.min.js"></script>
+    <script defer src="app/vendor/prism/prism-line-numbers.min.js"></script>
     <script type="module" src="app/main.js"></script>
   </body>
 </html>
