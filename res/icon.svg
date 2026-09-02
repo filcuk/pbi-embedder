@@ -7,52 +7,107 @@
    viewBox="0 0 215 215"
    version="1.1"
    id="svg1"
+   inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
+   sodipodi:docname="icon.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="true"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="px"
+     showgrid="true"
+     inkscape:zoom="2.2734375"
+     inkscape:cx="8.7972509"
+     inkscape:cy="45.305842"
+     inkscape:window-width="2512"
+     inkscape:window-height="1417"
+     inkscape:window-x="2600"
+     inkscape:window-y="793"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1">
+    <inkscape:grid
+       type="axonomgrid"
+       id="grid1"
+       units="px"
+       originx="159.05444"
+       originy="107.49988"
+       spacingx="3.7795276"
+       spacingy="5"
+       empcolor="#0099e5"
+       empopacity="0.30196078"
+       color="#0099e5"
+       opacity="0.14901961"
+       empspacing="5"
+       dotted="false"
+       gridanglex="30"
+       gridanglez="30"
+       enabled="true"
+       visible="true" />
+  </sodipodi:namedview>
   <defs
      id="defs1" />
   <g
+     inkscape:label="main"
+     inkscape:groupmode="layer"
      id="layer1"
      transform="translate(-96.94555,-148.50012)">
     <g
        id="g10"
+       inkscape:label="bracket"
        transform="translate(2.57214)">
       <path
          style="fill:none;fill-opacity:1;stroke:#ffffff;stroke-width:15;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:markers fill stroke"
          d="m 169.39746,206 v 100 l 21.65063,12.5 v 25 L 169.39746,356 126.09619,331 v -50 l -21.65064,-12.5 v -25 L 126.09619,231 v -50 l 43.30127,-25 21.65063,12.5 v 25 z"
-         id="path2" />
+         id="path2"
+         inkscape:label="outline" />
       <path
          style="fill:#ac9e7f;fill-opacity:1;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;paint-order:markers fill stroke"
          d="m 169.39746,206 v 100 l 21.65063,12.5 v 25 L 169.39746,356 126.09619,331 v -50 l -21.65064,-12.5 v -25 L 126.09619,231 v -50 l 43.30127,-25 21.65063,12.5 v 25 z"
-         id="path2-1" />
+         id="path2-1"
+         inkscape:label="shape" />
       <path
          id="path5"
          style="fill:#edddb5;fill-opacity:1;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;paint-order:markers fill stroke"
-         d="m 169.39746,306 -21.65064,12.5 21.65064,12.5 21.65063,-12.5 z m 0,-150 -43.30127,25 21.65063,12.5 43.30127,-25 z m -64.95191,87.5 21.65064,12.5 v -25 z" />
+         d="m 169.39746,306 -21.65064,12.5 21.65064,12.5 21.65063,-12.5 z m 0,-150 -43.30127,25 21.65063,12.5 43.30127,-25 z m -64.95191,87.5 21.65064,12.5 v -25 z"
+         inkscape:label="shine" />
       <path
          id="path7"
          style="fill:#746048;fill-opacity:1;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;paint-order:markers fill stroke"
-         d="M 191.04809,318.5 169.39746,331 v 25 l 21.65063,-12.5 z m 0,-150 -43.30127,25 v 125 c 0,0 21.65064,-12.5 21.65064,-12.5 0,0 0,-100 0,-100 l 21.65063,-12.5 z" />
+         d="M 191.04809,318.5 169.39746,331 v 25 l 21.65063,-12.5 z m 0,-150 -43.30127,25 v 125 c 0,0 21.65064,-12.5 21.65064,-12.5 0,0 0,-100 0,-100 l 21.65063,-12.5 z"
+         inkscape:label="shade" />
     </g>
     <g
        id="g9"
+       inkscape:label="cube"
        transform="translate(2.57214)">
       <path
          style="fill:none;fill-opacity:1;stroke:#ffffff;stroke-width:15;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:markers fill stroke"
          d="m 212.69873,231 v 50 L 256,306 299.30127,281 V 231 L 256,206 Z"
-         id="path1" />
+         id="path1"
+         inkscape:label="outline" />
       <path
          style="fill:#c15d4e;fill-opacity:1;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;paint-order:markers fill stroke"
          d="m 212.69873,231 v 50 L 256,306 299.30127,281 V 231 L 256,206 Z"
-         id="path1-8" />
+         id="path1-8"
+         inkscape:label="shape" />
       <path
          style="fill:#cc8c8c;fill-opacity:1;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;paint-order:markers fill stroke"
          d="M 256,206 212.69873,231 256,256 299.30127,231 Z"
-         id="path8" />
+         id="path8"
+         inkscape:label="shine" />
       <path
          style="fill:#9b4d44;fill-opacity:1;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;paint-order:markers fill stroke"
          d="m 256,256 v 50 l 43.30127,-25 v -50 z"
-         id="path9" />
+         id="path9"
+         inkscape:label="shade" />
     </g>
   </g>
 </svg>
