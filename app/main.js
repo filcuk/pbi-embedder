@@ -22,6 +22,7 @@ import {
 import { createSelection } from "./tools/selection.js";
 import {
   convert,
+  encodeBase64Text,
   encodeJsonText,
   encodeMJsonText,
   parseInput,
@@ -59,6 +60,8 @@ const selection = createSelection({
 const headingEl = document.getElementById("conversion-heading");
 const leadEl = document.getElementById("conversion-lead");
 const optionsSection = document.getElementById("options-section");
+const mJsonOptions = document.getElementById("m-json-options");
+const gzipToggle = document.getElementById("gzip-toggle");
 const outputFormatControl = document.getElementById("output-format-control");
 const errorBanner = document.querySelector("[data-convert-error]");
 const errorMessageEl = document.getElementById("convert-error-message");
@@ -68,12 +71,14 @@ const inputSurfaces = {
   tabular: document.getElementById("input-tabular"),
   json: document.getElementById("input-json"),
   "m-json": document.getElementById("input-m-json"),
+  base64: document.getElementById("input-base64"),
 };
 
 const outputSurfaces = {
   tabular: document.getElementById("output-tabular"),
   json: document.getElementById("output-json"),
   "m-json": document.getElementById("output-m-json"),
+  base64: document.getElementById("output-base64"),
 };
 
 const SAMPLE_COLUMNS = [
@@ -101,9 +106,13 @@ let inputJsonApi = null;
 /** @type {ReturnType<typeof initCodeBlock> | null} */
 let inputMJsonApi = null;
 /** @type {ReturnType<typeof initCodeBlock> | null} */
+let inputBase64Api = null;
+/** @type {ReturnType<typeof initCodeBlock> | null} */
 let outputJsonApi = null;
 /** @type {ReturnType<typeof initCodeBlock> | null} */
 let outputMJsonApi = null;
+/** @type {ReturnType<typeof initCodeBlock> | null} */
+let outputBase64Api = null;
 
 /** @type {number | null} */
 let convertFrame = null;
@@ -154,10 +163,13 @@ function syncChrome() {
   }
 
   const showOptions = selection.showOptions();
+  const showMJsonOptions = selection.showMJsonOptions();
   setHidden(optionsSection, !showOptions);
+  setHidden(mJsonOptions, !showMJsonOptions);
+  setHidden(gzipToggle, !selection.showGzip());
   convertQuotesToggleApi?.setDisabled(!selection.showConvertQuotes());
   if (singleQuoteWarning) {
-    if (showOptions && state.quoteStyle === "single") {
+    if (showMJsonOptions && state.quoteStyle === "single") {
       const converting =
         selection.showConvertQuotes() && state.convertQuotes;
       setBannerVariation(
@@ -200,6 +212,9 @@ function readInputValue(format) {
   if (format === "json") {
     return inputJsonApi?.getSource() ?? "";
   }
+  if (format === "base64") {
+    return inputBase64Api?.getSource() ?? "";
+  }
   return inputMJsonApi?.getSource() ?? "";
 }
 
@@ -226,6 +241,8 @@ function writeInputValue(format, value) {
     const text = typeof value === "string" ? value : "";
     if (format === "json") {
       inputJsonApi?.setSource(text);
+    } else if (format === "base64") {
+      inputBase64Api?.setSource(text);
     } else {
       inputMJsonApi?.setSource(text);
     }
@@ -265,12 +282,17 @@ function isInputBlank(format) {
 /**
  * Load the built-in sample into the current input format.
  */
-function loadSampleIntoInput() {
+async function loadSampleIntoInput() {
   const state = selection.get();
   if (state.input === "tabular") {
     writeInputValue("tabular", SAMPLE_TABLE);
   } else if (state.input === "json") {
     writeInputValue("json", encodeJsonText(SAMPLE_RECORDS));
+  } else if (state.input === "base64") {
+    writeInputValue(
+      "base64",
+      await encodeBase64Text(SAMPLE_RECORDS, { gzip: state.gzip })
+    );
   } else {
     writeInputValue(
       "m-json",
@@ -289,18 +311,27 @@ function loadSampleIntoInput() {
  * Best-effort move of the current payload into a newly selected input format.
  * @param {import("./tools/selection.js").Format} previousFormat
  * @param {import("./tools/selection.js").Format} nextFormat
- * @param {Pick<import("./tools/selection.js").ToolSelection, "quoteStyle" | "formatting">} options
+ * @param {Pick<import("./tools/selection.js").ToolSelection, "quoteStyle" | "formatting" | "gzip">} options
  */
-function migrateInputFormat(previousFormat, nextFormat, options) {
+async function migrateInputFormat(previousFormat, nextFormat, options) {
   const previousValue = readInputValue(previousFormat);
   try {
-    const parsed = parseInput(previousFormat, previousValue);
+    const parsed = await parseInput(previousFormat, previousValue, {
+      gzip: options.gzip,
+    });
     if (nextFormat === "tabular") {
       writeInputValue("tabular", parsed.table);
       return;
     }
     if (nextFormat === "json") {
       writeInputValue("json", encodeJsonText(parsed.records));
+      return;
+    }
+    if (nextFormat === "base64") {
+      writeInputValue(
+        "base64",
+        await encodeBase64Text(parsed.records, { gzip: options.gzip })
+      );
       return;
     }
     writeInputValue(
@@ -340,6 +371,8 @@ function writeOutput(outputFormat, result) {
     const text = result.text ?? "";
     if (outputFormat === "json") {
       outputJsonApi?.setSource(text);
+    } else if (outputFormat === "base64") {
+      outputBase64Api?.setSource(text);
     } else {
       outputMJsonApi?.setSource(text);
     }
@@ -367,6 +400,8 @@ function clearOutput(outputFormat) {
     }
     if (outputFormat === "json") {
       outputJsonApi?.setSource("");
+    } else if (outputFormat === "base64") {
+      outputBase64Api?.setSource("");
     } else {
       outputMJsonApi?.setSource("");
     }
@@ -381,12 +416,12 @@ function syncOutputTabularCopy() {
   copyBtn.disabled = !(lastOutputTable?.columns?.length);
 }
 
-function runConvert() {
+async function runConvert() {
   if (suppressConvert) return;
 
   const state = selection.get();
   const value = readInputValue(state.input);
-  const result = convert({
+  const result = await convert({
     inputFormat: state.input,
     outputFormat: state.output,
     value,
@@ -394,6 +429,7 @@ function runConvert() {
     formatting: state.formatting,
     includeParsing: state.includeParsing,
     convertQuotes: state.convertQuotes,
+    gzip: state.gzip,
   });
 
   if (!result.ok) {
@@ -413,8 +449,9 @@ function scheduleConvert() {
   }
   convertFrame = requestAnimationFrame(() => {
     convertFrame = null;
-    runConvert();
-    schedulePersist();
+    void runConvert().then(() => {
+      schedulePersist();
+    });
   });
 }
 
@@ -481,20 +518,23 @@ const inputFormatApi = initSegmentedControl(
   {
     onChange: ({ value, source }) => {
       if (source === "init" || isRestoring) return;
-      const previous = selection.get();
-      const state = selection.setInput(
-        /** @type {import("./tools/selection.js").Format} */ (value)
-      );
-      migrateInputFormat(previous.input, state.input, {
-        quoteStyle: state.quoteStyle,
-        formatting: state.formatting,
-      });
-      // Enable the new default output option before selecting it — otherwise
-      // selectValue no-ops while that segment is still disabled from the prior input.
-      syncOutputAvailability(state.input);
-      outputFormatApi?.selectValue(state.output, { emit: false });
-      syncChrome();
-      scheduleConvert();
+      void (async () => {
+        const previous = selection.get();
+        const state = selection.setInput(
+          /** @type {import("./tools/selection.js").Format} */ (value)
+        );
+        await migrateInputFormat(previous.input, state.input, {
+          quoteStyle: state.quoteStyle,
+          formatting: state.formatting,
+          gzip: state.gzip,
+        });
+        // Enable the new default output option before selecting it — otherwise
+        // selectValue no-ops while that segment is still disabled from the prior input.
+        syncOutputAvailability(state.input);
+        outputFormatApi?.selectValue(state.output, { emit: false });
+        syncChrome();
+        scheduleConvert();
+      })();
     },
   }
 );
@@ -548,6 +588,14 @@ const convertQuotesToggleApi = initToggle(
   }
 );
 
+const gzipToggleApi = initToggle(gzipToggle, {
+  onChange: ({ checked, source }) => {
+    if (source === "init" || isRestoring) return;
+    selection.setGzip(checked);
+    scheduleConvert();
+  },
+});
+
 inputTabularApi = initTabularInput(inputSurfaces.tabular, {
   onChange: () => {
     scheduleConvert();
@@ -562,7 +610,7 @@ const loadSampleDialog = initDialog({
 document.getElementById("load-sample-btn")?.addEventListener("click", () => {
   const format = selection.get().input;
   if (isInputBlank(format)) {
-    loadSampleIntoInput();
+    void loadSampleIntoInput();
     return;
   }
   loadSampleDialog?.openDialog();
@@ -570,7 +618,7 @@ document.getElementById("load-sample-btn")?.addEventListener("click", () => {
 
 document.getElementById("load-sample-confirm")?.addEventListener("click", () => {
   loadSampleDialog?.closeDialog();
-  loadSampleIntoInput();
+  void loadSampleIntoInput();
 });
 
 const outputTabularCopyBtn = document.getElementById("output-tabular-copy");
@@ -604,11 +652,14 @@ if (outputTabularCopyBtn instanceof HTMLButtonElement) {
 
 inputJsonApi = initCodeBlock(inputSurfaces.json);
 inputMJsonApi = initCodeBlock(inputSurfaces["m-json"]);
+inputBase64Api = initCodeBlock(inputSurfaces.base64);
 outputJsonApi = initCodeBlock(outputSurfaces.json);
 outputMJsonApi = initCodeBlock(outputSurfaces["m-json"]);
+outputBase64Api = initCodeBlock(outputSurfaces.base64);
 
 observeCodeSource(inputSurfaces.json);
 observeCodeSource(inputSurfaces["m-json"]);
+observeCodeSource(inputSurfaces.base64);
 
 initExpandableSurfaces(document);
 
@@ -623,6 +674,7 @@ try {
   formattingApi?.selectValue(state.formatting, { emit: false });
   includeParsingToggleApi?.setChecked(state.includeParsing);
   convertQuotesToggleApi?.setChecked(state.convertQuotes);
+  gzipToggleApi?.setChecked(state.gzip);
 
   const storedInputs = persisted?.inputs;
   if (storedInputs?.tabular?.columns?.length) {
