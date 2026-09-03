@@ -14,7 +14,11 @@ import {
   setButtonLabelFlash,
   flashButtonLabel,
 } from "./utils/button-label.js";
-import { showBanner, hideBanner } from "./components/banner.js";
+import {
+  showBanner,
+  hideBanner,
+  setBannerVariation,
+} from "./components/banner.js";
 import { createSelection } from "./tools/selection.js";
 import {
   convert,
@@ -47,7 +51,7 @@ const selection = createSelection({
   output: "m-json",
   quoteStyle: "escaped",
   compact: false,
-  includeParsing: false,
+  includeParsing: true,
   convertQuotes: true,
   ...(persisted?.selection ?? {}),
 });
@@ -155,6 +159,12 @@ function syncChrome() {
   setHidden(convertQuotesToggle, !(showOptions && selection.showConvertQuotes()));
   if (singleQuoteWarning) {
     if (showOptions && state.quoteStyle === "single") {
+      const converting =
+        selection.showConvertQuotes() && state.convertQuotes;
+      setBannerVariation(
+        singleQuoteWarning,
+        converting ? "converting" : "warning"
+      );
       showBanner(singleQuoteWarning);
     } else {
       hideBanner(singleQuoteWarning);
@@ -527,6 +537,7 @@ const convertQuotesToggleApi = initToggle(
     onChange: ({ checked, source }) => {
       if (source === "init" || isRestoring) return;
       selection.setConvertQuotes(checked);
+      syncChrome();
       scheduleConvert();
     },
   }
