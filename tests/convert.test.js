@@ -2,8 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   convert,
+  encodeBase64Text,
   encodeJsonText,
   encodeMJsonText,
+  parseBase64Text,
   parseJsonText,
   parseMJsonText,
   recordsToTable,
@@ -49,7 +51,7 @@ test("recordsToTable accepts a single object", () => {
   assert.equal(tableToRecords(table)[0].Name, "Solo");
 });
 
-test("normalize rejects non-record JSON shapes via parseJsonText", () => {
+test("normalize rejects non-record JSON shapes via parseJsonText", async () => {
   assert.throws(() => parseJsonText("[1, 2, 3]"), /array of objects/);
   assert.throws(() => parseJsonText('"hello"'), /object or an array/);
   assert.throws(() => parseJsonText(""), /empty/);
@@ -195,9 +197,9 @@ test("unwrapQuotedPayload and unescapeMTextBody", () => {
   assert.equal(unwrapQuotedPayload(`[{"A":1}]`), `[{"A":1}]`);
 });
 
-test("convert tabular → m-json (pretty escaped by default)", () => {
+test("convert tabular → m-json (pretty escaped by default)", async () => {
   const table = recordsToTable(SAMPLE_RECORDS);
-  const result = convert({
+  const result = await convert({
     inputFormat: "tabular",
     outputFormat: "m-json",
     value: table,
@@ -209,9 +211,9 @@ test("convert tabular → m-json (pretty escaped by default)", () => {
   assert.ok(result.text?.endsWith(`\n"`));
 });
 
-test("convert tabular → m-json compact", () => {
+test("convert tabular → m-json compact", async () => {
   const table = recordsToTable(SAMPLE_RECORDS);
-  const result = convert({
+  const result = await convert({
     inputFormat: "tabular",
     outputFormat: "m-json",
     value: table,
@@ -229,9 +231,9 @@ test("convert tabular → m-json compact", () => {
   );
 });
 
-test("convert json → m-json original preserves input spacing", () => {
+test("convert json → m-json original preserves input spacing", async () => {
   const source = '[\n  {"Name":"Alice"}\n]';
-  const result = convert({
+  const result = await convert({
     inputFormat: "json",
     outputFormat: "m-json",
     value: source,
@@ -256,9 +258,9 @@ test("convert json → m-json original preserves input spacing", () => {
   );
 });
 
-test("convert tabular → m-json original falls back to format", () => {
+test("convert tabular → m-json original falls back to format", async () => {
   const table = recordsToTable([{ Name: "Alice" }]);
-  const result = convert({
+  const result = await convert({
     inputFormat: "tabular",
     outputFormat: "m-json",
     value: table,
@@ -269,12 +271,12 @@ test("convert tabular → m-json original falls back to format", () => {
   assert.equal(result.text, encodeMJsonText([{ Name: "Alice" }]));
 });
 
-test("convert m-json → tabular", () => {
+test("convert m-json → tabular", async () => {
   const text = encodeMJsonText(SAMPLE_RECORDS, {
     quoteStyle: "escaped",
     formatting: "compact",
   });
-  const result = convert({
+  const result = await convert({
     inputFormat: "m-json",
     outputFormat: "tabular",
     value: text,
@@ -284,9 +286,9 @@ test("convert m-json → tabular", () => {
   assert.deepEqual(tableToRecords(result.table), SAMPLE_RECORDS);
 });
 
-test("convert json → tabular and tabular → json", () => {
+test("convert json → tabular and tabular → json", async () => {
   const json = encodeJsonText(SAMPLE_RECORDS);
-  const toTable = convert({
+  const toTable = await convert({
     inputFormat: "json",
     outputFormat: "tabular",
     value: json,
@@ -294,7 +296,7 @@ test("convert json → tabular and tabular → json", () => {
   assert.equal(toTable.ok, true);
   if (!toTable.ok) return;
 
-  const back = convert({
+  const back = await convert({
     inputFormat: "tabular",
     outputFormat: "json",
     value: toTable.table,
@@ -304,8 +306,8 @@ test("convert json → tabular and tabular → json", () => {
   assert.deepEqual(JSON.parse(back.text ?? "null"), SAMPLE_RECORDS);
 });
 
-test("convert m-json → json", () => {
-  const result = convert({
+test("convert m-json → json", async () => {
+  const result = await convert({
     inputFormat: "m-json",
     outputFormat: "json",
     value: `"[{'Name':'Alice'}]"`,
@@ -315,8 +317,8 @@ test("convert m-json → json", () => {
   assert.deepEqual(JSON.parse(result.text ?? "null"), [{ Name: "Alice" }]);
 });
 
-test("convert fails on invalid input without throwing", () => {
-  const result = convert({
+test("convert fails on invalid input without throwing", async () => {
+  const result = await convert({
     inputFormat: "json",
     outputFormat: "tabular",
     value: "not-json",
@@ -332,8 +334,8 @@ test("nested objects become JSON text cells", () => {
   assert.equal(table.rows[0].cells[table.columns[1].id], '{"color":"red"}');
 });
 
-test("convert rejects same input and output format", () => {
-  const result = convert({
+test("convert rejects same input and output format", async () => {
+  const result = await convert({
     inputFormat: "json",
     outputFormat: "json",
     value: "[]",
@@ -384,8 +386,8 @@ test("tableToRecords throws on duplicate column labels", () => {
   assert.throws(() => tableToRecords(table), /Duplicate column label: "A"/);
 });
 
-test("convert surfaces duplicate column labels without throwing", () => {
-  const result = convert({
+test("convert surfaces duplicate column labels without throwing", async () => {
+  const result = await convert({
     inputFormat: "tabular",
     outputFormat: "json",
     value: {
@@ -412,8 +414,8 @@ test("encodeMJsonText rejects apostrophes in single-quote mode", () => {
   );
 });
 
-test("convert surfaces single-quote apostrophe failure", () => {
-  const result = convert({
+test("convert surfaces single-quote apostrophe failure", async () => {
+  const result = await convert({
     inputFormat: "json",
     outputFormat: "m-json",
     value: JSON.stringify([{ Name: "O'Brien" }]),
@@ -442,4 +444,90 @@ test("encodeMJsonText escaped includeParsing has no Text.Replace", () => {
   });
   assert.match(encoded, /Json\.Document\(JSON\)/);
   assert.doesNotMatch(encoded, /Text\.Replace/);
+});
+test("encodeBase64Text / parseBase64Text round-trip with gzip", async () => {
+  const encoded = await encodeBase64Text(SAMPLE_RECORDS, { gzip: true });
+  assert.match(encoded, /^[A-Za-z0-9+/]+=*$/);
+  const decoded = await parseBase64Text(encoded, { gzip: true });
+  assert.deepEqual(decoded, SAMPLE_RECORDS);
+});
+
+test("encodeBase64Text / parseBase64Text round-trip without gzip", async () => {
+  const encoded = await encodeBase64Text(SAMPLE_RECORDS, { gzip: false });
+  const json = Buffer.from(encoded, "base64").toString("utf8");
+  assert.deepEqual(JSON.parse(json), SAMPLE_RECORDS);
+  const decoded = await parseBase64Text(encoded, { gzip: false });
+  assert.deepEqual(decoded, SAMPLE_RECORDS);
+});
+
+test("parseBase64Text strips whitespace", async () => {
+  const encoded = await encodeBase64Text([{ A: 1 }], { gzip: false });
+  const wrapped = `${encoded.slice(0, 8)}\n ${encoded.slice(8)}`;
+  assert.deepEqual(await parseBase64Text(wrapped, { gzip: false }), [{ A: 1 }]);
+});
+
+test("convert tabular → base64 → tabular with gzip", async () => {
+  const table = recordsToTable(SAMPLE_RECORDS);
+  const encoded = await convert({
+    inputFormat: "tabular",
+    outputFormat: "base64",
+    value: table,
+    gzip: true,
+  });
+  assert.equal(encoded.ok, true);
+  if (!encoded.ok) return;
+
+  const decoded = await convert({
+    inputFormat: "base64",
+    outputFormat: "tabular",
+    value: encoded.text,
+    gzip: true,
+  });
+  assert.equal(decoded.ok, true);
+  if (!decoded.ok) return;
+  assert.deepEqual(tableToRecords(decoded.table), SAMPLE_RECORDS);
+});
+
+test("convert json → base64 without gzip", async () => {
+  const result = await convert({
+    inputFormat: "json",
+    outputFormat: "base64",
+    value: encodeJsonText(SAMPLE_RECORDS),
+    gzip: false,
+  });
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.deepEqual(
+    await parseBase64Text(result.text ?? "", { gzip: false }),
+    SAMPLE_RECORDS
+  );
+});
+
+test("convert fails on invalid base64 without throwing", async () => {
+  const result = await convert({
+    inputFormat: "base64",
+    outputFormat: "json",
+    value: "@@@not-base64@@@",
+    gzip: false,
+  });
+  assert.equal(result.ok, false);
+  if (result.ok) return;
+  assert.match(result.error, /Invalid Base64/);
+});
+
+test("convert fails when gzip expected but payload is plain base64 json", async () => {
+  const plain = await encodeBase64Text([{ A: 1 }], { gzip: false });
+  const result = await convert({
+    inputFormat: "base64",
+    outputFormat: "json",
+    value: plain,
+    gzip: true,
+  });
+  assert.equal(result.ok, false);
+  if (result.ok) return;
+  assert.match(result.error, /Invalid GZip/);
+});
+
+test("parseBase64Text rejects empty input", async () => {
+  await assert.rejects(() => parseBase64Text("   ", { gzip: false }), /empty/);
 });

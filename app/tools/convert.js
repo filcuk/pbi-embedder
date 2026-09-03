@@ -1,5 +1,5 @@
 /**
- * Pure converters between tabular grid data, JSON, and M-encoded JSON.
+ * Pure converters between tabular grid data, JSON, M-encoded JSON, and Base64.
  */
 
 import {
@@ -7,13 +7,100 @@ import {
   detectColumnType,
 } from "../components/tabular-input.js";
 
-/** @typedef {"tabular" | "json" | "m-json"} Format */
+/** @typedef {"tabular" | "json" | "m-json" | "base64"} Format */
 /** @typedef {"single" | "escaped"} QuoteStyle */
 /** @typedef {"original" | "format" | "compact"} Formatting */
 /** @typedef {{ id: string, label: string, type: "text" | "number" | "logical" }} Column */
 /** @typedef {{ id: string, cells: Record<string, string | number | boolean | null> }} Row */
 /** @typedef {{ columns: Column[], rows: Row[] }} TableData */
 /** @typedef {Record<string, unknown>} RecordRow */
+
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
+
+const BASE64_RE = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+
+/**
+ * @param {Uint8Array} bytes
+ * @returns {string}
+ */
+export function bytesToBase64(bytes) {
+  if (typeof globalThis.Buffer !== "undefined") {
+    return globalThis.Buffer.from(bytes).toString("base64");
+  }
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  return btoa(binary);
+}
+
+/**
+ * @param {string} text
+ * @returns {Uint8Array}
+ */
+export function base64ToBytes(text) {
+  const cleaned = String(text ?? "").replace(/\s+/g, "");
+  if (!cleaned) {
+    throw new Error("Base64 input is empty.");
+  }
+  if (!BASE64_RE.test(cleaned)) {
+    throw new Error("Invalid Base64.");
+  }
+  if (typeof globalThis.Buffer !== "undefined") {
+    return new Uint8Array(globalThis.Buffer.from(cleaned, "base64"));
+  }
+  try {
+    const binary = atob(cleaned);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+  } catch {
+    throw new Error("Invalid Base64.");
+  }
+}
+
+/**
+ * @param {Uint8Array} bytes
+ * @param {boolean} compress
+ * @returns {Promise<Uint8Array>}
+ */
+async function transformGzip(bytes, compress) {
+  const StreamCtor = compress
+    ? globalThis.CompressionStream
+    : globalThis.DecompressionStream;
+  if (typeof StreamCtor !== "function") {
+    throw new Error(
+      compress
+        ? "GZip compression is not supported in this environment."
+        : "GZip decompression is not supported in this environment."
+    );
+  }
+  const stream = new Blob([bytes])
+    .stream()
+    .pipeThrough(new StreamCtor("gzip"));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+/**
+ * @param {Uint8Array} bytes
+ * @returns {Promise<Uint8Array>}
+ */
+export function gzipBytes(bytes) {
+  return transformGzip(bytes, true);
+}
+
+/**
+ * @param {Uint8Array} bytes
+ * @returns {Promise<Uint8Array>}
+ */
+export function gunzipBytes(bytes) {
+  return transformGzip(bytes, false);
+}
 
 /**
  * @typedef {{
@@ -242,6 +329,50 @@ export function encodeJsonText(records, { pretty = true } = {}) {
 }
 
 /**
+ * Decode Base64 (optionally GZip-compressed) JSON records.
+ * @param {string} text
+ * @param {{ gzip?: boolean }} [options]
+ * @returns {Promise<RecordRow[]>}
+ */
+export async function parseBase64Text(text, { gzip = true } = {}) {
+  let bytes = base64ToBytes(text);
+  if (gzip) {
+    try {
+      bytes = await gunzipBytes(bytes);
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        /not supported/i.test(error.message)
+      ) {
+        throw error;
+      }
+      throw new Error("Invalid GZip data.");
+    }
+  }
+  let json;
+  try {
+    json = textDecoder.decode(bytes);
+  } catch {
+    throw new Error("Invalid Base64 payload encoding.");
+  }
+  return parseJsonText(json);
+}
+
+/**
+ * Encode records as Base64 (optionally GZip-compressed) compact JSON.
+ * @param {RecordRow[]} records
+ * @param {{ gzip?: boolean }} [options]
+ * @returns {Promise<string>}
+ */
+export async function encodeBase64Text(records, { gzip = true } = {}) {
+  let bytes = textEncoder.encode(encodeJsonText(records, { pretty: false }));
+  if (gzip) {
+    bytes = await gzipBytes(bytes);
+  }
+  return bytesToBase64(bytes);
+}
+
+/**
  * Encode records as M-JSON.
  * Format (default): outer `"` on their own first/last lines, indented JSON body.
  * Compact: single-line `"…"` wrapper.
@@ -353,9 +484,10 @@ export function extractMJsonLiteral(text) {
  * Parse any input format into a table + records.
  * @param {Format} format
  * @param {TableData | string | null | undefined} value
- * @returns {{ table: TableData, records: RecordRow[] }}
+ * @param {{ gzip?: boolean }} [options]
+ * @returns {Promise<{ table: TableData, records: RecordRow[] }>}
  */
-export function parseInput(format, value) {
+export async function parseInput(format, value, { gzip = true } = {}) {
   if (format === "tabular") {
     const table = {
       columns: value?.columns ? [...value.columns] : [],
@@ -365,8 +497,15 @@ export function parseInput(format, value) {
   }
 
   const text = String(value ?? "");
-  const records =
-    format === "m-json" ? parseMJsonText(text) : parseJsonText(text);
+  /** @type {RecordRow[]} */
+  let records;
+  if (format === "base64") {
+    records = await parseBase64Text(text, { gzip });
+  } else if (format === "m-json") {
+    records = parseMJsonText(text);
+  } else {
+    records = parseJsonText(text);
+  }
   return { table: recordsToTable(records), records };
 }
 
@@ -381,10 +520,11 @@ export function parseInput(format, value) {
  *   sourceJson?: string | null,
  *   includeParsing?: boolean,
  *   convertQuotes?: boolean,
+ *   gzip?: boolean,
  * }} [options]
- * @returns {{ table: TableData, text: string | null }}
+ * @returns {Promise<{ table: TableData, text: string | null }>}
  */
-export function encodeOutput(
+export async function encodeOutput(
   format,
   table,
   records,
@@ -394,10 +534,17 @@ export function encodeOutput(
     sourceJson = null,
     includeParsing = false,
     convertQuotes = true,
+    gzip = true,
   } = {}
 ) {
   if (format === "tabular") {
     return { table, text: null };
+  }
+  if (format === "base64") {
+    return {
+      table,
+      text: await encodeBase64Text(records, { gzip }),
+    };
   }
   if (format === "m-json") {
     return {
@@ -424,10 +571,11 @@ export function encodeOutput(
  *   formatting?: Formatting,
  *   includeParsing?: boolean,
  *   convertQuotes?: boolean,
+ *   gzip?: boolean,
  * }} options
- * @returns {ConvertResult}
+ * @returns {Promise<ConvertResult>}
  */
-export function convert({
+export async function convert({
   inputFormat,
   outputFormat,
   value,
@@ -435,6 +583,7 @@ export function convert({
   formatting = "format",
   includeParsing = false,
   convertQuotes = true,
+  gzip = true,
 }) {
   try {
     if (inputFormat === outputFormat) {
@@ -444,16 +593,23 @@ export function convert({
       };
     }
 
-    const parsed = parseInput(inputFormat, value);
+    const parsed = await parseInput(inputFormat, value, { gzip });
     const sourceJson =
       formatting === "original" && inputFormat === "json"
         ? String(value ?? "").trim()
         : null;
-    const encoded = encodeOutput(
+    const encoded = await encodeOutput(
       outputFormat,
       parsed.table,
       parsed.records,
-      { quoteStyle, formatting, sourceJson, includeParsing, convertQuotes }
+      {
+        quoteStyle,
+        formatting,
+        sourceJson,
+        includeParsing,
+        convertQuotes,
+        gzip,
+      }
     );
 
     return {
