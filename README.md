@@ -6,10 +6,11 @@ Live site: [filcuk.github.io/pbi-embedder](https://filcuk.github.io/pbi-embedder
 
 ## What it does
 
-1. Choose **input** and **output** formats: Tabular, JSON, or M-JSON.
+1. Choose **input** and **output** formats: Tabular, JSON, M-JSON, or Base64.
 2. Edit or paste the input (or **Load sample**).
-3. When output is M-JSON, tune quote style, compact output, include parsing, and optional quote conversion.
-4. Copy the result (code toolbar, or **Copy** above tabular output for Excel-friendly TSV).
+3. When output is M-JSON, tune quote style, format (Original / Format / Compact), include parsing, and optional quote conversion.
+4. When input or output is Base64, optionally GZip-compress the JSON payload before encoding (on by default). When output is Base64, include parsing wraps a Power Query decode/`Table.FromRecords` query.
+5. Copy the result (code toolbar, or **Copy** above tabular output for Excel-friendly TSV).
 
 Selection and input content are remembered in the browser (`localStorage`).
 

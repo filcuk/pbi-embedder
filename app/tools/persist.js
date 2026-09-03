@@ -2,7 +2,7 @@
  * Persist tooling selection and input payloads in localStorage.
  */
 
-import { isFormat } from "./selection.js";
+import { isFormat, isFormatting, resolveFormatting } from "./selection.js";
 
 /** @typedef {import("./selection.js").ToolSelection} ToolSelection */
 /** @typedef {import("./convert.js").TableData} TableData */
@@ -18,6 +18,7 @@ const STORAGE_VERSION = 1;
  *     tabular?: TableData | null,
  *     json?: string,
  *     "m-json"?: string,
+ *     base64?: string,
  *   },
  * }} PersistedTooling
  */
@@ -56,12 +57,19 @@ function normalizePersisted(raw) {
   if (sel.quoteStyle === "single" || sel.quoteStyle === "escaped") {
     selection.quoteStyle = sel.quoteStyle;
   }
-  if (typeof sel.compact === "boolean") selection.compact = sel.compact;
+  if (isFormatting(sel.formatting) || typeof sel.compact === "boolean") {
+    selection.formatting = resolveFormatting(
+      /** @type {Partial<ToolSelection> & { compact?: boolean }} */ (sel)
+    );
+  }
   if (typeof sel.includeParsing === "boolean") {
     selection.includeParsing = sel.includeParsing;
   }
   if (typeof sel.convertQuotes === "boolean") {
     selection.convertQuotes = sel.convertQuotes;
+  }
+  if (typeof sel.gzip === "boolean") {
+    selection.gzip = sel.gzip;
   }
 
   /** @type {PersistedTooling["inputs"]} */
@@ -83,6 +91,9 @@ function normalizePersisted(raw) {
   if (typeof rawInputs.json === "string") inputs.json = rawInputs.json;
   if (typeof rawInputs["m-json"] === "string") {
     inputs["m-json"] = rawInputs["m-json"];
+  }
+  if (typeof rawInputs.base64 === "string") {
+    inputs.base64 = rawInputs.base64;
   }
 
   return { v: STORAGE_VERSION, selection, inputs };
@@ -108,6 +119,7 @@ export function loadPersistedTooling() {
  *     tabular?: TableData | null,
  *     json?: string,
  *     "m-json"?: string,
+ *     base64?: string,
  *   },
  * }} state
  */
@@ -131,6 +143,7 @@ export function savePersistedTooling(state) {
           : null,
         json: String(state.inputs.json ?? ""),
         "m-json": String(state.inputs["m-json"] ?? ""),
+        base64: String(state.inputs.base64 ?? ""),
       },
     };
     localStorage.setItem(TOOLING_STORAGE_KEY, JSON.stringify(payload));

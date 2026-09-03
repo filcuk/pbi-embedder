@@ -1,5 +1,5 @@
 /**
- * Pure converters between tabular grid data, JSON, and M-encoded JSON.
+ * Pure converters between tabular grid data, JSON, M-encoded JSON, and Base64.
  */
 
 import {
@@ -7,12 +7,100 @@ import {
   detectColumnType,
 } from "../components/tabular-input.js";
 
-/** @typedef {"tabular" | "json" | "m-json"} Format */
+/** @typedef {"tabular" | "json" | "m-json" | "base64"} Format */
 /** @typedef {"single" | "escaped"} QuoteStyle */
+/** @typedef {"original" | "format" | "compact"} Formatting */
 /** @typedef {{ id: string, label: string, type: "text" | "number" | "logical" }} Column */
 /** @typedef {{ id: string, cells: Record<string, string | number | boolean | null> }} Row */
 /** @typedef {{ columns: Column[], rows: Row[] }} TableData */
 /** @typedef {Record<string, unknown>} RecordRow */
+
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
+
+const BASE64_RE = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+
+/**
+ * @param {Uint8Array} bytes
+ * @returns {string}
+ */
+export function bytesToBase64(bytes) {
+  if (typeof globalThis.Buffer !== "undefined") {
+    return globalThis.Buffer.from(bytes).toString("base64");
+  }
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  return btoa(binary);
+}
+
+/**
+ * @param {string} text
+ * @returns {Uint8Array}
+ */
+export function base64ToBytes(text) {
+  const cleaned = String(text ?? "").replace(/\s+/g, "");
+  if (!cleaned) {
+    throw new Error("Base64 input is empty.");
+  }
+  if (!BASE64_RE.test(cleaned)) {
+    throw new Error("Invalid Base64.");
+  }
+  if (typeof globalThis.Buffer !== "undefined") {
+    return new Uint8Array(globalThis.Buffer.from(cleaned, "base64"));
+  }
+  try {
+    const binary = atob(cleaned);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+  } catch {
+    throw new Error("Invalid Base64.");
+  }
+}
+
+/**
+ * @param {Uint8Array} bytes
+ * @param {boolean} compress
+ * @returns {Promise<Uint8Array>}
+ */
+async function transformGzip(bytes, compress) {
+  const StreamCtor = compress
+    ? globalThis.CompressionStream
+    : globalThis.DecompressionStream;
+  if (typeof StreamCtor !== "function") {
+    throw new Error(
+      compress
+        ? "GZip compression is not supported in this environment."
+        : "GZip decompression is not supported in this environment."
+    );
+  }
+  const stream = new Blob([bytes])
+    .stream()
+    .pipeThrough(new StreamCtor("gzip"));
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+/**
+ * @param {Uint8Array} bytes
+ * @returns {Promise<Uint8Array>}
+ */
+export function gzipBytes(bytes) {
+  return transformGzip(bytes, true);
+}
+
+/**
+ * @param {Uint8Array} bytes
+ * @returns {Promise<Uint8Array>}
+ */
+export function gunzipBytes(bytes) {
+  return transformGzip(bytes, false);
+}
 
 /**
  * @typedef {{
@@ -241,16 +329,120 @@ export function encodeJsonText(records, { pretty = true } = {}) {
 }
 
 /**
+ * Decode Base64 (optionally GZip-compressed) JSON records.
+ * Also accepts a let-query that assigns the payload to a `Base64` step.
+ * @param {string} text
+ * @param {{ gzip?: boolean }} [options]
+ * @returns {Promise<RecordRow[]>}
+ */
+export async function parseBase64Text(text, { gzip = true } = {}) {
+  const payload = extractBase64Payload(String(text ?? ""));
+  let bytes = base64ToBytes(payload);
+  if (gzip) {
+    try {
+      bytes = await gunzipBytes(bytes);
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        /not supported/i.test(error.message)
+      ) {
+        throw error;
+      }
+      throw new Error("Invalid GZip data.");
+    }
+  }
+  let json;
+  try {
+    json = textDecoder.decode(bytes);
+  } catch {
+    throw new Error("Invalid Base64 payload encoding.");
+  }
+  return parseJsonText(json);
+}
+
+/**
+ * Encode records as Base64 (optionally GZip-compressed) compact JSON.
+ * Include parsing: wrap in a `let … in` that decodes Base64 (and GZip) to a table.
+ * @param {RecordRow[]} records
+ * @param {{ gzip?: boolean, includeParsing?: boolean }} [options]
+ * @returns {Promise<string>}
+ */
+export async function encodeBase64Text(
+  records,
+  { gzip = true, includeParsing = false } = {}
+) {
+  let bytes = textEncoder.encode(encodeJsonText(records, { pretty: false }));
+  if (gzip) {
+    bytes = await gzipBytes(bytes);
+  }
+  const encoded = bytesToBase64(bytes);
+  if (!includeParsing) return encoded;
+  return wrapBase64WithParsing(encoded, { gzip });
+}
+
+/**
+ * Wrap a Base64 payload in a Power Query query that parses it to a table.
+ * @param {string} base64Text
+ * @param {{ gzip?: boolean }} [options]
+ */
+export function wrapBase64WithParsing(base64Text, { gzip = true } = {}) {
+  const literal = `"${escapeMTextBody(base64Text)}"`;
+  const bytesStep = gzip
+    ? "Binary.Decompress(Binary.FromText(Base64, BinaryEncoding.Base64), Compression.GZip)"
+    : "Binary.FromText(Base64, BinaryEncoding.Base64)";
+  return [
+    "let",
+    `    Base64 = ${literal},`,
+    `    Binary = ${bytesStep},`,
+    "    JSON = Text.FromBinary(Binary),",
+    "    Source = Table.FromRecords(Json.Document(JSON))",
+    "in",
+    "    Source",
+  ].join("\n");
+}
+
+/**
+ * If `text` is a let-query with a `Base64 = "…"` step, return that payload;
+ * otherwise return the trimmed original text (whitespace stripped later).
+ * @param {string} text
+ */
+export function extractBase64Payload(text) {
+  const trimmed = String(text ?? "").trim();
+  const marker = trimmed.match(/\bBase64\s*=\s*"/i);
+  if (!marker || marker.index === undefined) return trimmed;
+
+  const openIndex = marker.index + marker[0].length - 1;
+  let i = openIndex + 1;
+  let body = "";
+  while (i < trimmed.length) {
+    const ch = trimmed[i];
+    if (ch === '"') {
+      if (trimmed[i + 1] === '"') {
+        body += '"';
+        i += 2;
+        continue;
+      }
+      return body;
+    }
+    body += ch;
+    i += 1;
+  }
+  return trimmed;
+}
+
+/**
  * Encode records as M-JSON.
- * Pretty (default): outer `"` on their own first/last lines, indented JSON body.
- * Compact: single-line `"…"` wrapper (previous behaviour).
+ * Format (default): outer `"` on their own first/last lines, indented JSON body.
+ * Compact: single-line `"…"` wrapper.
+ * Original: keep `sourceJson` whitespace (falls back to Format when missing).
  * Include parsing: wrap in a `let … in` with JSON + Source (table) steps.
  * Convert quotes (single + include parsing): Text.Replace `'` → `"` before Json.Document.
  *
  * @param {RecordRow[]} records
  * @param {{
  *   quoteStyle?: QuoteStyle,
- *   compact?: boolean,
+ *   formatting?: Formatting,
+ *   sourceJson?: string | null,
  *   includeParsing?: boolean,
  *   convertQuotes?: boolean,
  * }} [options]
@@ -259,14 +451,22 @@ export function encodeMJsonText(
   records,
   {
     quoteStyle = "escaped",
-    compact = false,
+    formatting = "format",
+    sourceJson = null,
     includeParsing = false,
     convertQuotes = true,
   } = {}
 ) {
-  const json = compact
-    ? JSON.stringify(records)
-    : JSON.stringify(records, null, 2);
+  const original =
+    formatting === "original" ? String(sourceJson ?? "").trim() : "";
+  const useOriginal = Boolean(original);
+  const useCompact = formatting === "compact" && !useOriginal;
+
+  const json = useOriginal
+    ? original
+    : useCompact
+      ? JSON.stringify(records)
+      : JSON.stringify(records, null, 2);
   let body;
   if (quoteStyle === "single") {
     // Naive " → ' swap cannot distinguish apostrophes from delimiters.
@@ -279,7 +479,8 @@ export function encodeMJsonText(
   } else {
     body = escapeMTextBody(json);
   }
-  const literal = compact ? `"${body}"` : `"\n${body}\n"`;
+  const multiline = useOriginal ? json.includes("\n") : !useCompact;
+  const literal = multiline ? `"\n${body}\n"` : `"${body}"`;
   if (!includeParsing) return literal;
   return wrapMJsonWithParsing(literal, {
     convertQuotes: quoteStyle === "single" && convertQuotes,
@@ -341,9 +542,10 @@ export function extractMJsonLiteral(text) {
  * Parse any input format into a table + records.
  * @param {Format} format
  * @param {TableData | string | null | undefined} value
- * @returns {{ table: TableData, records: RecordRow[] }}
+ * @param {{ gzip?: boolean }} [options]
+ * @returns {Promise<{ table: TableData, records: RecordRow[] }>}
  */
-export function parseInput(format, value) {
+export async function parseInput(format, value, { gzip = true } = {}) {
   if (format === "tabular") {
     const table = {
       columns: value?.columns ? [...value.columns] : [],
@@ -353,8 +555,15 @@ export function parseInput(format, value) {
   }
 
   const text = String(value ?? "");
-  const records =
-    format === "m-json" ? parseMJsonText(text) : parseJsonText(text);
+  /** @type {RecordRow[]} */
+  let records;
+  if (format === "base64") {
+    records = await parseBase64Text(text, { gzip });
+  } else if (format === "m-json") {
+    records = parseMJsonText(text);
+  } else {
+    records = parseJsonText(text);
+  }
   return { table: recordsToTable(records), records };
 }
 
@@ -365,32 +574,43 @@ export function parseInput(format, value) {
  * @param {RecordRow[]} records
  * @param {{
  *   quoteStyle?: QuoteStyle,
- *   compact?: boolean,
+ *   formatting?: Formatting,
+ *   sourceJson?: string | null,
  *   includeParsing?: boolean,
  *   convertQuotes?: boolean,
+ *   gzip?: boolean,
  * }} [options]
- * @returns {{ table: TableData, text: string | null }}
+ * @returns {Promise<{ table: TableData, text: string | null }>}
  */
-export function encodeOutput(
+export async function encodeOutput(
   format,
   table,
   records,
   {
     quoteStyle = "escaped",
-    compact = false,
+    formatting = "format",
+    sourceJson = null,
     includeParsing = false,
     convertQuotes = true,
+    gzip = true,
   } = {}
 ) {
   if (format === "tabular") {
     return { table, text: null };
+  }
+  if (format === "base64") {
+    return {
+      table,
+      text: await encodeBase64Text(records, { gzip, includeParsing }),
+    };
   }
   if (format === "m-json") {
     return {
       table,
       text: encodeMJsonText(records, {
         quoteStyle,
-        compact,
+        formatting,
+        sourceJson,
         includeParsing,
         convertQuotes,
       }),
@@ -406,20 +626,22 @@ export function encodeOutput(
  *   outputFormat: Format,
  *   value: TableData | string | null | undefined,
  *   quoteStyle?: QuoteStyle,
- *   compact?: boolean,
+ *   formatting?: Formatting,
  *   includeParsing?: boolean,
  *   convertQuotes?: boolean,
+ *   gzip?: boolean,
  * }} options
- * @returns {ConvertResult}
+ * @returns {Promise<ConvertResult>}
  */
-export function convert({
+export async function convert({
   inputFormat,
   outputFormat,
   value,
   quoteStyle = "escaped",
-  compact = false,
+  formatting = "format",
   includeParsing = false,
   convertQuotes = true,
+  gzip = true,
 }) {
   try {
     if (inputFormat === outputFormat) {
@@ -429,12 +651,23 @@ export function convert({
       };
     }
 
-    const parsed = parseInput(inputFormat, value);
-    const encoded = encodeOutput(
+    const parsed = await parseInput(inputFormat, value, { gzip });
+    const sourceJson =
+      formatting === "original" && inputFormat === "json"
+        ? String(value ?? "").trim()
+        : null;
+    const encoded = await encodeOutput(
       outputFormat,
       parsed.table,
       parsed.records,
-      { quoteStyle, compact, includeParsing, convertQuotes }
+      {
+        quoteStyle,
+        formatting,
+        sourceJson,
+        includeParsing,
+        convertQuotes,
+        gzip,
+      }
     );
 
     return {

@@ -125,6 +125,15 @@
               >
                 M-JSON
               </button>
+              <button
+                type="button"
+                class="segmented-control-item"
+                role="radio"
+                aria-checked="false"
+                data-segmented-control-value="base64"
+              >
+                Base64
+              </button>
             </div>
             <input
               type="hidden"
@@ -171,6 +180,15 @@
                 data-segmented-control-value="m-json"
               >
                 M-JSON
+              </button>
+              <button
+                type="button"
+                class="segmented-control-item"
+                role="radio"
+                aria-checked="false"
+                data-segmented-control-value="base64"
+              >
+                Base64
               </button>
             </div>
             <input
@@ -254,6 +272,22 @@
                 <pre class="line-numbers language-powerquery"><code class="language-powerquery"></code></pre>
               </div>
             </div>
+
+            <div
+              class="code-block code-block--full hidden"
+              id="input-base64"
+              data-code-mode="edit"
+              data-code-toolbar="top"
+              data-code-toolbar-actions="clear,copy,paste,maximize,line-numbers"
+              data-code-surface-actions="none"
+              data-expandable-surface
+              data-expandable-surface-label="Base64 input"
+              hidden
+            >
+              <div class="code-block-body" data-expandable-surface-trigger>
+                <pre class="line-numbers language-powerquery"><code class="language-powerquery"></code></pre>
+              </div>
+            </div>
           </section>
 
           <section
@@ -265,6 +299,7 @@
             <div
               class="banner banner-info hidden"
               data-single-quote-warning
+              data-banner-variations="warning converting"
               role="status"
               hidden
             >
@@ -277,9 +312,22 @@
               <span class="banner-body">
                 Single quotes may not be supported in the Mashup Engine. Convert to double quotes before parsing the JSON.
               </span>
+              <div
+                class="banner-variation-source"
+                data-banner-variation="converting"
+                data-banner-class="banner-success"
+                hidden
+              >
+                <span data-banner-variation-icon="success"></span>
+                <span data-banner-variation-body>
+                  Single quotes may not be supported in the Mashup Engine. Converting to double quotes before parsing the JSON.
+                </span>
+              </div>
             </div>
             <div class="section-panel" id="options-panel">
               <div class="panel-stack">
+              <div id="m-json-options">
+                <div class="panel-stack">
                 <div class="panel-row" id="quote-style-row">
                   <span class="field-label" id="quote-style-label">Quotes</span>
                   <div
@@ -318,79 +366,139 @@
                       value="escaped"
                     />
                   </div>
+                  <div
+                    class="toggle"
+                    id="convert-quotes-toggle"
+                    data-toggle-default="true"
+                    data-toggle-disabled
+                  >
+                    <button
+                      type="button"
+                      class="toggle-btn"
+                      role="switch"
+                      aria-checked="true"
+                      data-tooltip="Automatically replace single with double quotes"
+                    >
+                      <span class="toggle-track" aria-hidden="true">
+                        <span class="toggle-thumb">
+                          <span
+                            data-icon="check"
+                            data-icon-class="toggle-thumb-icon toggle-thumb-icon--on"
+                            aria-hidden="true"
+                          ></span>
+                        </span>
+                      </span>
+                      <span class="toggle-label">Convert quotes</span>
+                    </button>
+                    <input
+                      type="hidden"
+                      class="toggle-value"
+                      name="convert-quotes"
+                      value="true"
+                    />
+                  </div>
                 </div>
+                <div class="panel-row" id="formatting-row">
+                  <span class="field-label" id="formatting-label">Format</span>
+                  <div
+                    class="segmented-control segmented-control--slim"
+                    id="formatting-control"
+                    data-segmented-control-default="format"
+                  >
+                    <div
+                      class="segmented-control-list"
+                      role="radiogroup"
+                      aria-labelledby="formatting-label"
+                    >
+                      <button
+                        type="button"
+                        class="segmented-control-item"
+                        role="radio"
+                        aria-checked="false"
+                        data-segmented-control-value="original"
+                        data-tooltip="Keep the input spacing and line breaks"
+                      >
+                        Original
+                      </button>
+                      <button
+                        type="button"
+                        class="segmented-control-item"
+                        role="radio"
+                        aria-checked="true"
+                        data-segmented-control-value="format"
+                        data-tooltip="Pretty-print the output"
+                      >
+                        Format
+                      </button>
+                      <button
+                        type="button"
+                        class="segmented-control-item"
+                        role="radio"
+                        aria-checked="false"
+                        data-segmented-control-value="compact"
+                        data-tooltip="Minimise the output"
+                      >
+                        Compact
+                      </button>
+                    </div>
+                    <input
+                      type="hidden"
+                      class="segmented-control-value"
+                      name="formatting"
+                      value="format"
+                    />
+                  </div>
+                </div>
+              </div>
+              </div>
+              <div class="panel-row hidden" id="structure-row" hidden>
+                  <span class="field-label" id="structure-label">Structure</span>
+                  <div
+                    class="toggle"
+                    id="include-parsing-toggle"
+                    data-toggle-default="true"
+                  >
+                    <button
+                      type="button"
+                      class="toggle-btn"
+                      role="switch"
+                      aria-checked="true"
+                      aria-labelledby="structure-label"
+                      data-tooltip="Add let…in block with table parser"
+                    >
+                      <span class="toggle-track" aria-hidden="true">
+                        <span class="toggle-thumb">
+                          <span
+                            data-icon="check"
+                            data-icon-class="toggle-thumb-icon toggle-thumb-icon--on"
+                            aria-hidden="true"
+                          ></span>
+                        </span>
+                      </span>
+                      <span class="toggle-label">Include parsing</span>
+                    </button>
+                    <input
+                      type="hidden"
+                      class="toggle-value"
+                      name="include-parsing"
+                      value="true"
+                    />
+                  </div>
+                </div>
+              <div class="panel-row hidden" id="gzip-row" hidden>
+                <span class="field-label" id="gzip-label">Compression</span>
                 <div
                   class="toggle"
-                  id="compact-output-toggle"
-                  data-toggle-default="false"
-                >
-                  <button
-                    type="button"
-                    class="toggle-btn"
-                    role="switch"
-                    aria-checked="false"
-                    data-tooltip="Minimise the output"
-                  >
-                    <span class="toggle-track" aria-hidden="true">
-                      <span class="toggle-thumb">
-                        <span
-                          data-icon="check"
-                          data-icon-class="toggle-thumb-icon toggle-thumb-icon--on"
-                          aria-hidden="true"
-                        ></span>
-                      </span>
-                    </span>
-                    <span class="toggle-label">Compact output</span>
-                  </button>
-                  <input
-                    type="hidden"
-                    class="toggle-value"
-                    name="compact-output"
-                    value="false"
-                  />
-                </div>
-                <div
-                  class="toggle"
-                  id="include-parsing-toggle"
-                  data-toggle-default="false"
-                >
-                  <button
-                    type="button"
-                    class="toggle-btn"
-                    role="switch"
-                    aria-checked="false"
-                    data-tooltip="Add let…in block with table parser"
-                  >
-                    <span class="toggle-track" aria-hidden="true">
-                      <span class="toggle-thumb">
-                        <span
-                          data-icon="check"
-                          data-icon-class="toggle-thumb-icon toggle-thumb-icon--on"
-                          aria-hidden="true"
-                        ></span>
-                      </span>
-                    </span>
-                    <span class="toggle-label">Include parsing</span>
-                  </button>
-                  <input
-                    type="hidden"
-                    class="toggle-value"
-                    name="include-parsing"
-                    value="false"
-                  />
-                </div>
-                <div
-                  class="toggle hidden"
-                  id="convert-quotes-toggle"
+                  id="gzip-toggle"
                   data-toggle-default="true"
-                  hidden
                 >
                   <button
                     type="button"
                     class="toggle-btn"
                     role="switch"
                     aria-checked="true"
-                    data-tooltip="Automatically replace single with double quotes"
+                    aria-labelledby="gzip-label"
+                    data-tooltip="Compress or decompress with GZip before Base64"
                   >
                     <span class="toggle-track" aria-hidden="true">
                       <span class="toggle-thumb">
@@ -401,15 +509,16 @@
                         ></span>
                       </span>
                     </span>
-                    <span class="toggle-label">Convert quotes</span>
+                    <span class="toggle-label">GZip</span>
                   </button>
                   <input
                     type="hidden"
                     class="toggle-value"
-                    name="convert-quotes"
+                    name="gzip"
                     value="true"
                   />
                 </div>
+              </div>
               </div>
             </div>
           </section>
@@ -470,6 +579,22 @@
               data-code-surface-actions="none"
               data-expandable-surface
               data-expandable-surface-label="M-JSON output"
+            >
+              <div class="code-block-body" data-expandable-surface-trigger>
+                <pre class="line-numbers language-powerquery"><code class="language-powerquery"></code></pre>
+              </div>
+            </div>
+
+            <div
+              class="code-block code-block--full hidden"
+              id="output-base64"
+              data-code-mode="select"
+              data-code-toolbar="top"
+              data-code-toolbar-actions="copy,maximize,line-numbers"
+              data-code-surface-actions="none"
+              data-expandable-surface
+              data-expandable-surface-label="Base64 output"
+              hidden
             >
               <div class="code-block-body" data-expandable-surface-trigger>
                 <pre class="line-numbers language-powerquery"><code class="language-powerquery"></code></pre>
