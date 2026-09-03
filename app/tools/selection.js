@@ -1,10 +1,10 @@
 /**
- * Tooling selection — family (M / DAX), input/output formats, M-JSON options.
+ * Tooling selection — family (M / DAX), input/output formats, M-JSON / Base64 options.
  * Pure helpers for the converter chrome; no DOM.
  */
 
 /** @typedef {"m" | "dax"} Family */
-/** @typedef {"tabular" | "json" | "m-json"} Format */
+/** @typedef {"tabular" | "json" | "m-json" | "base64"} Format */
 /** @typedef {"single" | "escaped"} QuoteStyle */
 /** @typedef {"original" | "format" | "compact"} Formatting */
 /**
@@ -16,11 +16,12 @@
  *   formatting: Formatting,
  *   includeParsing: boolean,
  *   convertQuotes: boolean,
+ *   gzip: boolean,
  * }} ToolSelection
  */
 
 /** @type {readonly Format[]} */
-export const FORMATS = Object.freeze(["tabular", "json", "m-json"]);
+export const FORMATS = Object.freeze(["tabular", "json", "m-json", "base64"]);
 
 /** @type {readonly Formatting[]} */
 export const FORMATTINGS = Object.freeze(["original", "format", "compact"]);
@@ -30,6 +31,7 @@ export const FORMAT_LABELS = Object.freeze({
   tabular: "Tabular",
   json: "JSON",
   "m-json": "M-JSON",
+  base64: "Base64",
 });
 
 /** @type {Readonly<Record<Family, string>>} */
@@ -98,12 +100,14 @@ export function formatConversionLead({ input, output }) {
     tabular: "tabular data",
     json: "JSON records",
     "m-json": "M-encoded JSON",
+    base64: "Base64-encoded JSON",
   };
   /** @type {Readonly<Record<Format, string>>} */
   const to = {
     tabular: "a table",
     json: "plain JSON",
     "m-json": "M-encoded JSON for Power Query",
+    base64: "Base64-encoded JSON",
   };
   return `Convert ${from[input] ?? input} to ${to[output] ?? output}.`;
 }
@@ -119,9 +123,12 @@ export function formatConversionLead({ input, output }) {
  *   setFormatting: (formatting: Formatting) => ToolSelection,
  *   setIncludeParsing: (includeParsing: boolean) => ToolSelection,
  *   setConvertQuotes: (convertQuotes: boolean) => ToolSelection,
+ *   setGzip: (gzip: boolean) => ToolSelection,
  *   heading: () => string,
  *   lead: () => string,
  *   showOptions: () => boolean,
+ *   showMJsonOptions: () => boolean,
+ *   showGzip: () => boolean,
  *   showConvertQuotes: () => boolean,
  * }}
  */
@@ -143,6 +150,7 @@ export function createSelection(initial = {}) {
   let includeParsing = Boolean(initial.includeParsing);
   let convertQuotes =
     initial.convertQuotes === undefined ? true : Boolean(initial.convertQuotes);
+  let gzip = initial.gzip === undefined ? true : Boolean(initial.gzip);
 
   if (output === input) {
     output = defaultOutputForInput(input);
@@ -158,6 +166,7 @@ export function createSelection(initial = {}) {
       formatting,
       includeParsing,
       convertQuotes,
+      gzip,
     };
   }
 
@@ -195,6 +204,10 @@ export function createSelection(initial = {}) {
       convertQuotes = Boolean(next);
       return snapshot();
     },
+    setGzip(next) {
+      gzip = Boolean(next);
+      return snapshot();
+    },
     heading() {
       return formatConversionHeading(snapshot());
     },
@@ -202,7 +215,13 @@ export function createSelection(initial = {}) {
       return formatConversionLead(snapshot());
     },
     showOptions() {
+      return output === "m-json" || input === "base64" || output === "base64";
+    },
+    showMJsonOptions() {
       return output === "m-json";
+    },
+    showGzip() {
+      return input === "base64" || output === "base64";
     },
     showConvertQuotes() {
       return quoteStyle === "single" && includeParsing;
