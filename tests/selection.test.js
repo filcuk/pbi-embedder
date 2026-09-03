@@ -29,7 +29,7 @@ test("createSelection defaults", () => {
     input: "tabular",
     output: "m-json",
     quoteStyle: "escaped",
-    compact: false,
+    formatting: "format",
     includeParsing: false,
     convertQuotes: true,
   });
@@ -40,6 +40,15 @@ test("createSelection defaults", () => {
   );
   assert.equal(selection.showOptions(), true);
   assert.equal(selection.showConvertQuotes(), false);
+});
+
+test("createSelection migrates legacy compact boolean", () => {
+  assert.equal(createSelection({ compact: true }).get().formatting, "compact");
+  assert.equal(createSelection({ compact: false }).get().formatting, "format");
+  assert.equal(
+    createSelection({ compact: true, formatting: "original" }).get().formatting,
+    "original"
+  );
 });
 
 test("createSelection ignores initial family dax while DAX UI is stubbed", () => {

@@ -2,7 +2,7 @@
  * Persist tooling selection and input payloads in localStorage.
  */
 
-import { isFormat } from "./selection.js";
+import { isFormat, isFormatting, resolveFormatting } from "./selection.js";
 
 /** @typedef {import("./selection.js").ToolSelection} ToolSelection */
 /** @typedef {import("./convert.js").TableData} TableData */
@@ -56,7 +56,11 @@ function normalizePersisted(raw) {
   if (sel.quoteStyle === "single" || sel.quoteStyle === "escaped") {
     selection.quoteStyle = sel.quoteStyle;
   }
-  if (typeof sel.compact === "boolean") selection.compact = sel.compact;
+  if (isFormatting(sel.formatting) || typeof sel.compact === "boolean") {
+    selection.formatting = resolveFormatting(
+      /** @type {Partial<ToolSelection> & { compact?: boolean }} */ (sel)
+    );
+  }
   if (typeof sel.includeParsing === "boolean") {
     selection.includeParsing = sel.includeParsing;
   }

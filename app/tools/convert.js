@@ -9,6 +9,7 @@ import {
 
 /** @typedef {"tabular" | "json" | "m-json"} Format */
 /** @typedef {"single" | "escaped"} QuoteStyle */
+/** @typedef {"original" | "format" | "compact"} Formatting */
 /** @typedef {{ id: string, label: string, type: "text" | "number" | "logical" }} Column */
 /** @typedef {{ id: string, cells: Record<string, string | number | boolean | null> }} Row */
 /** @typedef {{ columns: Column[], rows: Row[] }} TableData */
@@ -242,15 +243,17 @@ export function encodeJsonText(records, { pretty = true } = {}) {
 
 /**
  * Encode records as M-JSON.
- * Pretty (default): outer `"` on their own first/last lines, indented JSON body.
- * Compact: single-line `"…"` wrapper (previous behaviour).
+ * Format (default): outer `"` on their own first/last lines, indented JSON body.
+ * Compact: single-line `"…"` wrapper.
+ * Original: keep `sourceJson` whitespace (falls back to Format when missing).
  * Include parsing: wrap in a `let … in` with JSON + Source (table) steps.
  * Convert quotes (single + include parsing): Text.Replace `'` → `"` before Json.Document.
  *
  * @param {RecordRow[]} records
  * @param {{
  *   quoteStyle?: QuoteStyle,
- *   compact?: boolean,
+ *   formatting?: Formatting,
+ *   sourceJson?: string | null,
  *   includeParsing?: boolean,
  *   convertQuotes?: boolean,
  * }} [options]
@@ -259,14 +262,22 @@ export function encodeMJsonText(
   records,
   {
     quoteStyle = "escaped",
-    compact = false,
+    formatting = "format",
+    sourceJson = null,
     includeParsing = false,
     convertQuotes = true,
   } = {}
 ) {
-  const json = compact
-    ? JSON.stringify(records)
-    : JSON.stringify(records, null, 2);
+  const original =
+    formatting === "original" ? String(sourceJson ?? "").trim() : "";
+  const useOriginal = Boolean(original);
+  const useCompact = formatting === "compact" && !useOriginal;
+
+  const json = useOriginal
+    ? original
+    : useCompact
+      ? JSON.stringify(records)
+      : JSON.stringify(records, null, 2);
   let body;
   if (quoteStyle === "single") {
     // Naive " → ' swap cannot distinguish apostrophes from delimiters.
@@ -279,7 +290,8 @@ export function encodeMJsonText(
   } else {
     body = escapeMTextBody(json);
   }
-  const literal = compact ? `"${body}"` : `"\n${body}\n"`;
+  const multiline = useOriginal ? json.includes("\n") : !useCompact;
+  const literal = multiline ? `"\n${body}\n"` : `"${body}"`;
   if (!includeParsing) return literal;
   return wrapMJsonWithParsing(literal, {
     convertQuotes: quoteStyle === "single" && convertQuotes,
@@ -365,7 +377,8 @@ export function parseInput(format, value) {
  * @param {RecordRow[]} records
  * @param {{
  *   quoteStyle?: QuoteStyle,
- *   compact?: boolean,
+ *   formatting?: Formatting,
+ *   sourceJson?: string | null,
  *   includeParsing?: boolean,
  *   convertQuotes?: boolean,
  * }} [options]
@@ -377,7 +390,8 @@ export function encodeOutput(
   records,
   {
     quoteStyle = "escaped",
-    compact = false,
+    formatting = "format",
+    sourceJson = null,
     includeParsing = false,
     convertQuotes = true,
   } = {}
@@ -390,7 +404,8 @@ export function encodeOutput(
       table,
       text: encodeMJsonText(records, {
         quoteStyle,
-        compact,
+        formatting,
+        sourceJson,
         includeParsing,
         convertQuotes,
       }),
@@ -406,7 +421,7 @@ export function encodeOutput(
  *   outputFormat: Format,
  *   value: TableData | string | null | undefined,
  *   quoteStyle?: QuoteStyle,
- *   compact?: boolean,
+ *   formatting?: Formatting,
  *   includeParsing?: boolean,
  *   convertQuotes?: boolean,
  * }} options
@@ -417,7 +432,7 @@ export function convert({
   outputFormat,
   value,
   quoteStyle = "escaped",
-  compact = false,
+  formatting = "format",
   includeParsing = false,
   convertQuotes = true,
 }) {
@@ -430,11 +445,15 @@ export function convert({
     }
 
     const parsed = parseInput(inputFormat, value);
+    const sourceJson =
+      formatting === "original" && inputFormat === "json"
+        ? String(value ?? "").trim()
+        : null;
     const encoded = encodeOutput(
       outputFormat,
       parsed.table,
       parsed.records,
-      { quoteStyle, compact, includeParsing, convertQuotes }
+      { quoteStyle, formatting, sourceJson, includeParsing, convertQuotes }
     );
 
     return {

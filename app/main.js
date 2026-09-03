@@ -50,7 +50,7 @@ const selection = createSelection({
   input: "tabular",
   output: "m-json",
   quoteStyle: "escaped",
-  compact: false,
+  formatting: "format",
   includeParsing: true,
   convertQuotes: true,
   ...(persisted?.selection ?? {}),
@@ -59,7 +59,6 @@ const selection = createSelection({
 const headingEl = document.getElementById("conversion-heading");
 const leadEl = document.getElementById("conversion-lead");
 const optionsSection = document.getElementById("options-section");
-const convertQuotesToggle = document.getElementById("convert-quotes-toggle");
 const outputFormatControl = document.getElementById("output-format-control");
 const errorBanner = document.querySelector("[data-convert-error]");
 const errorMessageEl = document.getElementById("convert-error-message");
@@ -156,7 +155,7 @@ function syncChrome() {
 
   const showOptions = selection.showOptions();
   setHidden(optionsSection, !showOptions);
-  setHidden(convertQuotesToggle, !(showOptions && selection.showConvertQuotes()));
+  convertQuotesToggleApi?.setDisabled(!selection.showConvertQuotes());
   if (singleQuoteWarning) {
     if (showOptions && state.quoteStyle === "single") {
       const converting =
@@ -277,7 +276,7 @@ function loadSampleIntoInput() {
       "m-json",
       encodeMJsonText(SAMPLE_RECORDS, {
         quoteStyle: state.quoteStyle,
-        compact: state.compact,
+        formatting: state.formatting,
         includeParsing: state.includeParsing,
         convertQuotes: state.convertQuotes,
       })
@@ -290,7 +289,7 @@ function loadSampleIntoInput() {
  * Best-effort move of the current payload into a newly selected input format.
  * @param {import("./tools/selection.js").Format} previousFormat
  * @param {import("./tools/selection.js").Format} nextFormat
- * @param {Pick<import("./tools/selection.js").ToolSelection, "quoteStyle" | "compact">} options
+ * @param {Pick<import("./tools/selection.js").ToolSelection, "quoteStyle" | "formatting">} options
  */
 function migrateInputFormat(previousFormat, nextFormat, options) {
   const previousValue = readInputValue(previousFormat);
@@ -308,7 +307,11 @@ function migrateInputFormat(previousFormat, nextFormat, options) {
       "m-json",
       encodeMJsonText(parsed.records, {
         quoteStyle: options.quoteStyle,
-        compact: options.compact,
+        formatting: options.formatting,
+        sourceJson:
+          options.formatting === "original" && previousFormat === "json"
+            ? String(previousValue ?? "").trim()
+            : null,
       })
     );
   } catch {
@@ -388,7 +391,7 @@ function runConvert() {
     outputFormat: state.output,
     value,
     quoteStyle: state.quoteStyle,
-    compact: state.compact,
+    formatting: state.formatting,
     includeParsing: state.includeParsing,
     convertQuotes: state.convertQuotes,
   });
@@ -484,7 +487,7 @@ const inputFormatApi = initSegmentedControl(
       );
       migrateInputFormat(previous.input, state.input, {
         quoteStyle: state.quoteStyle,
-        compact: state.compact,
+        formatting: state.formatting,
       });
       // Enable the new default output option before selecting it — otherwise
       // selectValue no-ops while that segment is still disabled from the prior input.
@@ -508,12 +511,14 @@ const quoteStyleApi = initSegmentedControl(
   }
 );
 
-const compactToggleApi = initToggle(
-  document.getElementById("compact-output-toggle"),
+const formattingApi = initSegmentedControl(
+  document.getElementById("formatting-control"),
   {
-    onChange: ({ checked, source }) => {
+    onChange: ({ value, source }) => {
       if (source === "init" || isRestoring) return;
-      selection.setCompact(checked);
+      selection.setFormatting(
+        /** @type {import("./tools/selection.js").Formatting} */ (value)
+      );
       scheduleConvert();
     },
   }
@@ -615,7 +620,7 @@ try {
   syncOutputAvailability(state.input);
   outputFormatApi?.selectValue(state.output, { emit: false });
   quoteStyleApi?.selectValue(state.quoteStyle, { emit: false });
-  compactToggleApi?.setChecked(state.compact);
+  formattingApi?.selectValue(state.formatting, { emit: false });
   includeParsingToggleApi?.setChecked(state.includeParsing);
   convertQuotesToggleApi?.setChecked(state.convertQuotes);
 

@@ -6,13 +6,14 @@
 /** @typedef {"m" | "dax"} Family */
 /** @typedef {"tabular" | "json" | "m-json"} Format */
 /** @typedef {"single" | "escaped"} QuoteStyle */
+/** @typedef {"original" | "format" | "compact"} Formatting */
 /**
  * @typedef {{
  *   family: Family,
  *   input: Format,
  *   output: Format,
  *   quoteStyle: QuoteStyle,
- *   compact: boolean,
+ *   formatting: Formatting,
  *   includeParsing: boolean,
  *   convertQuotes: boolean,
  * }} ToolSelection
@@ -20,6 +21,9 @@
 
 /** @type {readonly Format[]} */
 export const FORMATS = Object.freeze(["tabular", "json", "m-json"]);
+
+/** @type {readonly Formatting[]} */
+export const FORMATTINGS = Object.freeze(["original", "format", "compact"]);
 
 /** @type {Readonly<Record<Format, string>>} */
 export const FORMAT_LABELS = Object.freeze({
@@ -40,6 +44,27 @@ export const FAMILY_LABELS = Object.freeze({
  */
 export function isFormat(value) {
   return FORMATS.includes(/** @type {Format} */ (value));
+}
+
+/**
+ * @param {unknown} value
+ * @returns {value is Formatting}
+ */
+export function isFormatting(value) {
+  return FORMATTINGS.includes(/** @type {Formatting} */ (value));
+}
+
+/**
+ * Resolve formatting from a partial selection, including legacy `compact`.
+ * @param {Partial<ToolSelection> & { compact?: boolean }} [initial]
+ * @returns {Formatting}
+ */
+export function resolveFormatting(initial = {}) {
+  if (isFormatting(initial.formatting)) return initial.formatting;
+  if (typeof initial.compact === "boolean") {
+    return initial.compact ? "compact" : "format";
+  }
+  return "format";
 }
 
 /**
@@ -84,14 +109,14 @@ export function formatConversionLead({ input, output }) {
 }
 
 /**
- * @param {Partial<ToolSelection>} [initial]
+ * @param {Partial<ToolSelection> & { compact?: boolean }} [initial]
  * @returns {{
  *   get: () => ToolSelection,
  *   setFamily: (family: Family) => ToolSelection,
  *   setInput: (input: Format) => ToolSelection,
  *   setOutput: (output: Format) => ToolSelection,
  *   setQuoteStyle: (quoteStyle: QuoteStyle) => ToolSelection,
- *   setCompact: (compact: boolean) => ToolSelection,
+ *   setFormatting: (formatting: Formatting) => ToolSelection,
  *   setIncludeParsing: (includeParsing: boolean) => ToolSelection,
  *   setConvertQuotes: (convertQuotes: boolean) => ToolSelection,
  *   heading: () => string,
@@ -113,7 +138,8 @@ export function createSelection(initial = {}) {
     : defaultOutputForInput(input);
   /** @type {QuoteStyle} */
   let quoteStyle = initial.quoteStyle === "single" ? "single" : "escaped";
-  let compact = Boolean(initial.compact);
+  /** @type {Formatting} */
+  let formatting = resolveFormatting(initial);
   let includeParsing = Boolean(initial.includeParsing);
   let convertQuotes =
     initial.convertQuotes === undefined ? true : Boolean(initial.convertQuotes);
@@ -129,7 +155,7 @@ export function createSelection(initial = {}) {
       input,
       output,
       quoteStyle,
-      compact,
+      formatting,
       includeParsing,
       convertQuotes,
     };
@@ -156,8 +182,9 @@ export function createSelection(initial = {}) {
       quoteStyle = next === "single" ? "single" : "escaped";
       return snapshot();
     },
-    setCompact(next) {
-      compact = Boolean(next);
+    setFormatting(next) {
+      if (!isFormatting(next)) return snapshot();
+      formatting = next;
       return snapshot();
     },
     setIncludeParsing(next) {

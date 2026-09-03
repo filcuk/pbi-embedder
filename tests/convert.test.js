@@ -91,7 +91,7 @@ test("encodeMJsonText pretty single-quote form", () => {
 test("encodeMJsonText compact single-quote form", () => {
   const encoded = encodeMJsonText([{ Name: "Alice", Age: 30 }], {
     quoteStyle: "single",
-    compact: true,
+    formatting: "compact",
   });
   assert.equal(encoded, `"[{'Name':'Alice','Age':30}]"`);
 });
@@ -116,7 +116,7 @@ test("encodeMJsonText pretty escaped-quote form explicit", () => {
 test("encodeMJsonText compact escaped-quote form", () => {
   const encoded = encodeMJsonText([{ Name: "Alice", Age: 30 }], {
     quoteStyle: "escaped",
-    compact: true,
+    formatting: "compact",
   });
   assert.equal(encoded, `"[{""Name"":""Alice"",""Age"":30}]"`);
 });
@@ -136,7 +136,7 @@ test("parseMJsonText accepts single-quote and escaped forms", () => {
 test("encodeMJsonText include parsing wraps let query", () => {
   const encoded = encodeMJsonText([{ Name: "Alice" }], {
     quoteStyle: "single",
-    compact: true,
+    formatting: "compact",
     includeParsing: true,
   });
   assert.equal(
@@ -154,7 +154,7 @@ test("encodeMJsonText include parsing wraps let query", () => {
 test("encodeMJsonText include parsing can skip quote conversion", () => {
   const encoded = encodeMJsonText([{ Name: "Alice" }], {
     quoteStyle: "single",
-    compact: true,
+    formatting: "compact",
     includeParsing: true,
     convertQuotes: false,
   });
@@ -216,20 +216,63 @@ test("convert tabular → m-json compact", () => {
     outputFormat: "m-json",
     value: table,
     quoteStyle: "single",
-    compact: true,
+    formatting: "compact",
   });
   assert.equal(result.ok, true);
   if (!result.ok) return;
   assert.equal(
     result.text,
-    encodeMJsonText(SAMPLE_RECORDS, { quoteStyle: "single", compact: true })
+    encodeMJsonText(SAMPLE_RECORDS, {
+      quoteStyle: "single",
+      formatting: "compact",
+    })
   );
+});
+
+test("convert json → m-json original preserves input spacing", () => {
+  const source = '[\n  {"Name":"Alice"}\n]';
+  const result = convert({
+    inputFormat: "json",
+    outputFormat: "m-json",
+    value: source,
+    formatting: "original",
+  });
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(
+    result.text,
+    encodeMJsonText([{ Name: "Alice" }], {
+      formatting: "original",
+      sourceJson: source,
+    })
+  );
+  assert.equal(
+    result.text,
+    `"
+[
+  {""Name"":""Alice""}
+]
+"`
+  );
+});
+
+test("convert tabular → m-json original falls back to format", () => {
+  const table = recordsToTable([{ Name: "Alice" }]);
+  const result = convert({
+    inputFormat: "tabular",
+    outputFormat: "m-json",
+    value: table,
+    formatting: "original",
+  });
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.text, encodeMJsonText([{ Name: "Alice" }]));
 });
 
 test("convert m-json → tabular", () => {
   const text = encodeMJsonText(SAMPLE_RECORDS, {
     quoteStyle: "escaped",
-    compact: true,
+    formatting: "compact",
   });
   const result = convert({
     inputFormat: "m-json",
@@ -363,7 +406,7 @@ test("encodeMJsonText rejects apostrophes in single-quote mode", () => {
     () =>
       encodeMJsonText([{ Name: "O'Brien" }], {
         quoteStyle: "single",
-        compact: true,
+        formatting: "compact",
       }),
     /apostrophe/
   );
@@ -375,7 +418,7 @@ test("convert surfaces single-quote apostrophe failure", () => {
     outputFormat: "m-json",
     value: JSON.stringify([{ Name: "O'Brien" }]),
     quoteStyle: "single",
-    compact: true,
+    formatting: "compact",
   });
   assert.equal(result.ok, false);
   if (result.ok) return;
@@ -394,7 +437,7 @@ test("encodeJsonText compact omits trailing newline", () => {
 test("encodeMJsonText escaped includeParsing has no Text.Replace", () => {
   const encoded = encodeMJsonText([{ A: 1 }], {
     quoteStyle: "escaped",
-    compact: true,
+    formatting: "compact",
     includeParsing: true,
   });
   assert.match(encoded, /Json\.Document\(JSON\)/);

@@ -64,7 +64,7 @@ test("save and load round-trip selection and inputs", () => {
       input: /** @type {const} */ ("json"),
       output: /** @type {const} */ ("m-json"),
       quoteStyle: /** @type {const} */ ("single"),
-      compact: true,
+      formatting: /** @type {const} */ ("compact"),
       includeParsing: true,
       convertQuotes: false,
     };
@@ -132,6 +132,7 @@ test("load ignores bad tabular shape and unknown selection fields", () => {
           output: "csv",
           quoteStyle: "weird",
           compact: "yes",
+          formatting: "nope",
         },
         inputs: {
           tabular: { columns: "bad", rows: [] },
@@ -144,6 +145,28 @@ test("load ignores bad tabular shape and unknown selection fields", () => {
     assert.ok(loaded);
     assert.deepEqual(loaded.selection, { input: "json" });
     assert.deepEqual(loaded.inputs, {});
+  } finally {
+    memory.restore();
+  }
+});
+
+test("load migrates legacy compact boolean to formatting", () => {
+  const memory = createMemoryLocalStorage();
+  memory.install();
+  try {
+    memory.store.set(
+      TOOLING_STORAGE_KEY,
+      JSON.stringify({
+        v: 1,
+        selection: {
+          compact: true,
+        },
+        inputs: {},
+      })
+    );
+    const loaded = loadPersistedTooling();
+    assert.ok(loaded);
+    assert.deepEqual(loaded.selection, { formatting: "compact" });
   } finally {
     memory.restore();
   }
@@ -196,7 +219,7 @@ test("save swallows setItem failures", () => {
           input: "tabular",
           output: "m-json",
           quoteStyle: "escaped",
-          compact: false,
+          formatting: "format",
           includeParsing: false,
           convertQuotes: true,
         },

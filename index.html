@@ -331,10 +331,10 @@
                     />
                   </div>
                   <div
-                    class="toggle hidden"
+                    class="toggle"
                     id="convert-quotes-toggle"
                     data-toggle-default="true"
-                    hidden
+                    data-toggle-disabled
                   >
                     <button
                       type="button"
@@ -362,65 +362,90 @@
                     />
                   </div>
                 </div>
+                <div class="panel-row" id="formatting-row">
+              <span class="field-label" id="formatting-label">Format</span>
+              <div
+                class="segmented-control segmented-control--slim"
+                id="formatting-control"
+                data-segmented-control-default="format"
+              >
                 <div
+                  class="segmented-control-list"
+                  role="radiogroup"
+                  aria-labelledby="formatting-label"
+                >
+                  <button
+                    type="button"
+                    class="segmented-control-item"
+                    role="radio"
+                    aria-checked="false"
+                    data-segmented-control-value="original"
+                    data-tooltip="Keep the input spacing and line breaks"
+                  >
+                    Original
+                  </button>
+                  <button
+                    type="button"
+                    class="segmented-control-item"
+                    role="radio"
+                    aria-checked="true"
+                    data-segmented-control-value="format"
+                    data-tooltip="Pretty-print the output"
+                  >
+                    Format
+                  </button>
+                  <button
+                    type="button"
+                    class="segmented-control-item"
+                    role="radio"
+                    aria-checked="false"
+                    data-segmented-control-value="compact"
+                    data-tooltip="Minimise the output"
+                  >
+                    Compact
+                  </button>
+                </div>
+                <input
+                  type="hidden"
+                  class="segmented-control-value"
+                  name="formatting"
+                  value="format"
+                />
+              </div>
+            </div>
+            <div class="panel-row" id="structure-row">
+              <span class="field-label" id="structure-label">Structure</span>
+              <div
                 class="toggle"
                 id="include-parsing-toggle"
                 data-toggle-default="true"
-                >
-                <button
-                type="button"
-                class="toggle-btn"
-                role="switch"
-                aria-checked="true"
-                data-tooltip="Add let…in block with table parser"
-                >
-                <span class="toggle-track" aria-hidden="true">
-                  <span class="toggle-thumb">
-                    <span
-                    data-icon="check"
-                    data-icon-class="toggle-thumb-icon toggle-thumb-icon--on"
-                    aria-hidden="true"
-                    ></span>
-                  </span>
-                </span>
-                <span class="toggle-label">Include parsing</span>
-              </button>
-              <input
-              type="hidden"
-              class="toggle-value"
-              name="include-parsing"
-              value="true"
-              />
-            </div>
-            <div
-              class="toggle"
-              id="compact-output-toggle"
-              data-toggle-default="false"
-            >
-              <button
-                type="button"
-                class="toggle-btn"
-                role="switch"
-                aria-checked="false"
-                data-tooltip="Minimise the output"
               >
-                <span class="toggle-track" aria-hidden="true">
-                  <span class="toggle-thumb">
-                    <span
-                      data-icon="check"
-                      data-icon-class="toggle-thumb-icon toggle-thumb-icon--on"
-                      aria-hidden="true"
-                    ></span>
+                <button
+                  type="button"
+                  class="toggle-btn"
+                  role="switch"
+                  aria-checked="true"
+                  aria-labelledby="structure-label"
+                  data-tooltip="Add let…in block with table parser"
+                >
+                  <span class="toggle-track" aria-hidden="true">
+                    <span class="toggle-thumb">
+                      <span
+                        data-icon="check"
+                        data-icon-class="toggle-thumb-icon toggle-thumb-icon--on"
+                        aria-hidden="true"
+                      ></span>
+                    </span>
                   </span>
-                </span>
-                <span class="toggle-label">Compact output</span>
-              </button>
-              <input
-                type="hidden"
-                class="toggle-value"
-                name="compact-output"
-                value="false"
-              />
+                  <span class="toggle-label">Include parsing</span>
+                </button>
+                <input
+                  type="hidden"
+                  class="toggle-value"
+                  name="include-parsing"
+                  value="true"
+                />
+              </div>
             </div>
           </div>
         </div>
