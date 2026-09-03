@@ -531,3 +531,30 @@ test("convert fails when gzip expected but payload is plain base64 json", async 
 test("parseBase64Text rejects empty input", async () => {
   await assert.rejects(() => parseBase64Text("   ", { gzip: false }), /empty/);
 });
+
+test("encodeBase64Text include parsing wraps let query with gzip", async () => {
+  const encoded = await encodeBase64Text([{ Name: "Alice" }], {
+    gzip: true,
+    includeParsing: true,
+  });
+  assert.match(encoded, /^let\n/);
+  assert.match(encoded, /Base64 = "/);
+  assert.match(encoded, /Binary\.Decompress\(/);
+  assert.match(encoded, /Compression\.GZip/);
+  assert.match(encoded, /Table\.FromRecords\(Json\.Document\(JSON\)\)/);
+  assert.deepEqual(await parseBase64Text(encoded, { gzip: true }), [
+    { Name: "Alice" },
+  ]);
+});
+
+test("encodeBase64Text include parsing without gzip skips decompress", async () => {
+  const encoded = await encodeBase64Text([{ Name: "Alice" }], {
+    gzip: false,
+    includeParsing: true,
+  });
+  assert.match(encoded, /Binary\.FromText\(Base64, BinaryEncoding\.Base64\)/);
+  assert.doesNotMatch(encoded, /Binary\.Decompress/);
+  assert.deepEqual(await parseBase64Text(encoded, { gzip: false }), [
+    { Name: "Alice" },
+  ]);
+});

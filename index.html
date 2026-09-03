@@ -285,7 +285,7 @@
               hidden
             >
               <div class="code-block-body" data-expandable-surface-trigger>
-                <pre class="line-numbers"><code></code></pre>
+                <pre class="line-numbers language-powerquery"><code class="language-powerquery"></code></pre>
               </div>
             </div>
           </section>
@@ -449,7 +449,9 @@
                     />
                   </div>
                 </div>
-                <div class="panel-row" id="structure-row">
+              </div>
+              </div>
+              <div class="panel-row hidden" id="structure-row" hidden>
                   <span class="field-label" id="structure-label">Structure</span>
                   <div
                     class="toggle"
@@ -483,38 +485,39 @@
                     />
                   </div>
                 </div>
-              </div>
-              </div>
-              <div
-                class="toggle hidden"
-                id="gzip-toggle"
-                data-toggle-default="true"
-                hidden
-              >
-                <button
-                  type="button"
-                  class="toggle-btn"
-                  role="switch"
-                  aria-checked="true"
-                  data-tooltip="Compress or decompress with GZip before Base64"
+              <div class="panel-row hidden" id="gzip-row" hidden>
+                <span class="field-label" id="gzip-label">Compression</span>
+                <div
+                  class="toggle"
+                  id="gzip-toggle"
+                  data-toggle-default="true"
                 >
-                  <span class="toggle-track" aria-hidden="true">
-                    <span class="toggle-thumb">
-                      <span
-                        data-icon="check"
-                        data-icon-class="toggle-thumb-icon toggle-thumb-icon--on"
-                        aria-hidden="true"
-                      ></span>
+                  <button
+                    type="button"
+                    class="toggle-btn"
+                    role="switch"
+                    aria-checked="true"
+                    aria-labelledby="gzip-label"
+                    data-tooltip="Compress or decompress with GZip before Base64"
+                  >
+                    <span class="toggle-track" aria-hidden="true">
+                      <span class="toggle-thumb">
+                        <span
+                          data-icon="check"
+                          data-icon-class="toggle-thumb-icon toggle-thumb-icon--on"
+                          aria-hidden="true"
+                        ></span>
+                      </span>
                     </span>
-                  </span>
-                  <span class="toggle-label">GZip compressed</span>
-                </button>
-                <input
-                  type="hidden"
-                  class="toggle-value"
-                  name="gzip"
-                  value="true"
-                />
+                    <span class="toggle-label">GZip</span>
+                  </button>
+                  <input
+                    type="hidden"
+                    class="toggle-value"
+                    name="gzip"
+                    value="true"
+                  />
+                </div>
               </div>
               </div>
             </div>
@@ -594,7 +597,7 @@
               hidden
             >
               <div class="code-block-body" data-expandable-surface-trigger>
-                <pre class="line-numbers"><code></code></pre>
+                <pre class="line-numbers language-powerquery"><code class="language-powerquery"></code></pre>
               </div>
             </div>
           </section>

@@ -330,12 +330,14 @@ export function encodeJsonText(records, { pretty = true } = {}) {
 
 /**
  * Decode Base64 (optionally GZip-compressed) JSON records.
+ * Also accepts a let-query that assigns the payload to a `Base64` step.
  * @param {string} text
  * @param {{ gzip?: boolean }} [options]
  * @returns {Promise<RecordRow[]>}
  */
 export async function parseBase64Text(text, { gzip = true } = {}) {
-  let bytes = base64ToBytes(text);
+  const payload = extractBase64Payload(String(text ?? ""));
+  let bytes = base64ToBytes(payload);
   if (gzip) {
     try {
       bytes = await gunzipBytes(bytes);
@@ -360,16 +362,72 @@ export async function parseBase64Text(text, { gzip = true } = {}) {
 
 /**
  * Encode records as Base64 (optionally GZip-compressed) compact JSON.
+ * Include parsing: wrap in a `let … in` that decodes Base64 (and GZip) to a table.
  * @param {RecordRow[]} records
- * @param {{ gzip?: boolean }} [options]
+ * @param {{ gzip?: boolean, includeParsing?: boolean }} [options]
  * @returns {Promise<string>}
  */
-export async function encodeBase64Text(records, { gzip = true } = {}) {
+export async function encodeBase64Text(
+  records,
+  { gzip = true, includeParsing = false } = {}
+) {
   let bytes = textEncoder.encode(encodeJsonText(records, { pretty: false }));
   if (gzip) {
     bytes = await gzipBytes(bytes);
   }
-  return bytesToBase64(bytes);
+  const encoded = bytesToBase64(bytes);
+  if (!includeParsing) return encoded;
+  return wrapBase64WithParsing(encoded, { gzip });
+}
+
+/**
+ * Wrap a Base64 payload in a Power Query query that parses it to a table.
+ * @param {string} base64Text
+ * @param {{ gzip?: boolean }} [options]
+ */
+export function wrapBase64WithParsing(base64Text, { gzip = true } = {}) {
+  const literal = `"${escapeMTextBody(base64Text)}"`;
+  const bytesStep = gzip
+    ? "Binary.Decompress(Binary.FromText(Base64, BinaryEncoding.Base64), Compression.GZip)"
+    : "Binary.FromText(Base64, BinaryEncoding.Base64)";
+  return [
+    "let",
+    `    Base64 = ${literal},`,
+    `    Binary = ${bytesStep},`,
+    "    JSON = Text.FromBinary(Binary),",
+    "    Source = Table.FromRecords(Json.Document(JSON))",
+    "in",
+    "    Source",
+  ].join("\n");
+}
+
+/**
+ * If `text` is a let-query with a `Base64 = "…"` step, return that payload;
+ * otherwise return the trimmed original text (whitespace stripped later).
+ * @param {string} text
+ */
+export function extractBase64Payload(text) {
+  const trimmed = String(text ?? "").trim();
+  const marker = trimmed.match(/\bBase64\s*=\s*"/i);
+  if (!marker || marker.index === undefined) return trimmed;
+
+  const openIndex = marker.index + marker[0].length - 1;
+  let i = openIndex + 1;
+  let body = "";
+  while (i < trimmed.length) {
+    const ch = trimmed[i];
+    if (ch === '"') {
+      if (trimmed[i + 1] === '"') {
+        body += '"';
+        i += 2;
+        continue;
+      }
+      return body;
+    }
+    body += ch;
+    i += 1;
+  }
+  return trimmed;
 }
 
 /**
@@ -543,7 +601,7 @@ export async function encodeOutput(
   if (format === "base64") {
     return {
       table,
-      text: await encodeBase64Text(records, { gzip }),
+      text: await encodeBase64Text(records, { gzip, includeParsing }),
     };
   }
   if (format === "m-json") {

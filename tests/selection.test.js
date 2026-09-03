@@ -43,6 +43,7 @@ test("createSelection defaults", () => {
   );
   assert.equal(selection.showOptions(), true);
   assert.equal(selection.showMJsonOptions(), true);
+  assert.equal(selection.showIncludeParsing(), true);
   assert.equal(selection.showGzip(), false);
   assert.equal(selection.showConvertQuotes(), false);
 });
@@ -81,6 +82,7 @@ test("setInput resets output via defaultOutputForInput", () => {
   assert.equal(selection.get().output, "tabular");
   assert.equal(selection.showOptions(), false);
   assert.equal(selection.showMJsonOptions(), false);
+  assert.equal(selection.showIncludeParsing(), false);
   assert.equal(selection.showGzip(), false);
 });
 
@@ -99,17 +101,20 @@ test("showOptions and showGzip for base64 input or output", () => {
   assert.equal(selection.showOptions(), false);
   assert.equal(selection.showGzip(), false);
   assert.equal(selection.showMJsonOptions(), false);
+  assert.equal(selection.showIncludeParsing(), false);
 
   selection.setOutput("base64");
   assert.equal(selection.showOptions(), true);
   assert.equal(selection.showGzip(), true);
   assert.equal(selection.showMJsonOptions(), false);
+  assert.equal(selection.showIncludeParsing(), true);
 
   selection.setInput("base64");
   assert.equal(selection.get().output, "m-json");
   assert.equal(selection.showOptions(), true);
   assert.equal(selection.showGzip(), true);
   assert.equal(selection.showMJsonOptions(), true);
+  assert.equal(selection.showIncludeParsing(), true);
 });
 
 test("setGzip updates selection", () => {

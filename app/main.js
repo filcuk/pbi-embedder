@@ -61,6 +61,8 @@ const headingEl = document.getElementById("conversion-heading");
 const leadEl = document.getElementById("conversion-lead");
 const optionsSection = document.getElementById("options-section");
 const mJsonOptions = document.getElementById("m-json-options");
+const structureRow = document.getElementById("structure-row");
+const gzipRow = document.getElementById("gzip-row");
 const gzipToggle = document.getElementById("gzip-toggle");
 const outputFormatControl = document.getElementById("output-format-control");
 const errorBanner = document.querySelector("[data-convert-error]");
@@ -166,7 +168,8 @@ function syncChrome() {
   const showMJsonOptions = selection.showMJsonOptions();
   setHidden(optionsSection, !showOptions);
   setHidden(mJsonOptions, !showMJsonOptions);
-  setHidden(gzipToggle, !selection.showGzip());
+  setHidden(structureRow, !selection.showIncludeParsing());
+  setHidden(gzipRow, !selection.showGzip());
   convertQuotesToggleApi?.setDisabled(!selection.showConvertQuotes());
   if (singleQuoteWarning) {
     if (showMJsonOptions && state.quoteStyle === "single") {

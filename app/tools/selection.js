@@ -128,6 +128,7 @@ export function formatConversionLead({ input, output }) {
  *   lead: () => string,
  *   showOptions: () => boolean,
  *   showMJsonOptions: () => boolean,
+ *   showIncludeParsing: () => boolean,
  *   showGzip: () => boolean,
  *   showConvertQuotes: () => boolean,
  * }}
@@ -219,6 +220,9 @@ export function createSelection(initial = {}) {
     },
     showMJsonOptions() {
       return output === "m-json";
+    },
+    showIncludeParsing() {
+      return output === "m-json" || output === "base64";
     },
     showGzip() {
       return input === "base64" || output === "base64";
