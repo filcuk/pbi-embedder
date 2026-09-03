@@ -18,6 +18,7 @@ const STORAGE_VERSION = 1;
  *     tabular?: TableData | null,
  *     json?: string,
  *     "m-json"?: string,
+ *     base64?: string,
  *   },
  * }} PersistedTooling
  */
@@ -67,6 +68,9 @@ function normalizePersisted(raw) {
   if (typeof sel.convertQuotes === "boolean") {
     selection.convertQuotes = sel.convertQuotes;
   }
+  if (typeof sel.gzip === "boolean") {
+    selection.gzip = sel.gzip;
+  }
 
   /** @type {PersistedTooling["inputs"]} */
   const inputs = {};
@@ -87,6 +91,9 @@ function normalizePersisted(raw) {
   if (typeof rawInputs.json === "string") inputs.json = rawInputs.json;
   if (typeof rawInputs["m-json"] === "string") {
     inputs["m-json"] = rawInputs["m-json"];
+  }
+  if (typeof rawInputs.base64 === "string") {
+    inputs.base64 = rawInputs.base64;
   }
 
   return { v: STORAGE_VERSION, selection, inputs };
@@ -112,6 +119,7 @@ export function loadPersistedTooling() {
  *     tabular?: TableData | null,
  *     json?: string,
  *     "m-json"?: string,
+ *     base64?: string,
  *   },
  * }} state
  */
@@ -135,6 +143,7 @@ export function savePersistedTooling(state) {
           : null,
         json: String(state.inputs.json ?? ""),
         "m-json": String(state.inputs["m-json"] ?? ""),
+        base64: String(state.inputs.base64 ?? ""),
       },
     };
     localStorage.setItem(TOOLING_STORAGE_KEY, JSON.stringify(payload));

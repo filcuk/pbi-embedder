@@ -468,6 +468,7 @@ function schedulePersist() {
         tabular: inputTabularApi?.getData() ?? null,
         json: inputJsonApi?.getSource() ?? "",
         "m-json": inputMJsonApi?.getSource() ?? "",
+        base64: inputBase64Api?.getSource() ?? "",
       },
     });
   });
@@ -685,6 +686,9 @@ try {
   }
   if (typeof storedInputs?.["m-json"] === "string") {
     writeInputValue("m-json", storedInputs["m-json"]);
+  }
+  if (typeof storedInputs?.base64 === "string") {
+    writeInputValue("base64", storedInputs.base64);
   }
 } finally {
   isRestoring = false;

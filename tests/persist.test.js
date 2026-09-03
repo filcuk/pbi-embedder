@@ -67,6 +67,7 @@ test("save and load round-trip selection and inputs", () => {
       formatting: /** @type {const} */ ("compact"),
       includeParsing: true,
       convertQuotes: false,
+      gzip: false,
     };
     const tabular = {
       columns: [{ id: "c1", label: "Name", type: /** @type {const} */ ("text") }],
@@ -79,6 +80,7 @@ test("save and load round-trip selection and inputs", () => {
         tabular,
         json: '[{"Name":"Widget"}]',
         "m-json": `"[{'Name':'Widget'}]"`,
+        base64: "W3siTmFtZSI6IldpZGdldCJ9XQ==",
       },
     });
 
@@ -89,6 +91,7 @@ test("save and load round-trip selection and inputs", () => {
     assert.deepEqual(loaded.inputs.tabular, tabular);
     assert.equal(loaded.inputs.json, '[{"Name":"Widget"}]');
     assert.equal(loaded.inputs["m-json"], `"[{'Name':'Widget'}]"`);
+    assert.equal(loaded.inputs.base64, "W3siTmFtZSI6IldpZGdldCJ9XQ==");
   } finally {
     memory.restore();
   }
@@ -138,6 +141,7 @@ test("load ignores bad tabular shape and unknown selection fields", () => {
           tabular: { columns: "bad", rows: [] },
           json: 12,
           "m-json": true,
+          base64: false,
         },
       })
     );
@@ -145,6 +149,37 @@ test("load ignores bad tabular shape and unknown selection fields", () => {
     assert.ok(loaded);
     assert.deepEqual(loaded.selection, { input: "json" });
     assert.deepEqual(loaded.inputs, {});
+  } finally {
+    memory.restore();
+  }
+});
+
+test("load accepts gzip and base64", () => {
+  const memory = createMemoryLocalStorage();
+  memory.install();
+  try {
+    memory.store.set(
+      TOOLING_STORAGE_KEY,
+      JSON.stringify({
+        v: 1,
+        selection: {
+          input: "base64",
+          output: "tabular",
+          gzip: false,
+        },
+        inputs: {
+          base64: "W10=",
+        },
+      })
+    );
+    const loaded = loadPersistedTooling();
+    assert.ok(loaded);
+    assert.deepEqual(loaded.selection, {
+      input: "base64",
+      output: "tabular",
+      gzip: false,
+    });
+    assert.equal(loaded.inputs.base64, "W10=");
   } finally {
     memory.restore();
   }
@@ -222,6 +257,7 @@ test("save swallows setItem failures", () => {
           formatting: "format",
           includeParsing: false,
           convertQuotes: true,
+          gzip: true,
         },
         inputs: {},
       })
